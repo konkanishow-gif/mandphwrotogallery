@@ -65,6 +65,10 @@ export default function AlbumDetailPage() {
       .finally(() => setIsLoadingCatalog(false));
   }, [slug]);
 
+  const [syncSecondsAgo, setSyncSecondsAgo] = useState(0);
+  const [autoSyncToast, setAutoSyncToast] = useState<string | null>(null);
+  const prevAlbumPhotosRef = React.useRef(0);
+
   // Fetch on-demand live photos for this specific folder from Google Drive
   const refreshLivePhotos = useCallback(async () => {
     if (!currentAlbum?.id) return;
@@ -73,6 +77,13 @@ export default function AlbumDetailPage() {
       const res = await fetch(`/api/drive/folder?id=${currentAlbum.id}`);
       const data = await res.json();
       if (data?.photos && Array.isArray(data.photos) && data.photos.length > 0) {
+        if (prevAlbumPhotosRef.current > 0 && data.photos.length > prevAlbumPhotosRef.current) {
+          const diff = data.photos.length - prevAlbumPhotosRef.current;
+          setAutoSyncToast(`✨ Auto-Synced: ${diff} new photo${diff > 1 ? "s" : ""} added live to this album!`);
+          setTimeout(() => setAutoSyncToast(null), 5000);
+        }
+        prevAlbumPhotosRef.current = data.photos.length;
+
         setCurrentAlbum((prev) => {
           if (!prev) return prev;
           return {
@@ -80,9 +91,11 @@ export default function AlbumDetailPage() {
             photos: data.photos,
             photoCount: data.photoCount || data.photos.length,
             coverPhoto: data.photos[0] || prev.coverPhoto,
+            subfolders: data.subfolders || prev.subfolders,
             hasLivePhotos: true,
           };
         });
+        setSyncSecondsAgo(0);
         setLastSyncText(
           new Date().toLocaleTimeString([], {
             hour: "2-digit",
@@ -98,12 +111,38 @@ export default function AlbumDetailPage() {
     }
   }, [currentAlbum?.id]);
 
-  // Trigger live photo check when currentAlbum is ready
+  // Trigger live photo check on mount and background loop every 12 seconds
   useEffect(() => {
-    if (currentAlbum?.id) {
+    if (!currentAlbum?.id) return;
+    refreshLivePhotos();
+    const interval = setInterval(() => {
       refreshLivePhotos();
-    }
+    }, 12000);
+    return () => clearInterval(interval);
   }, [currentAlbum?.id, refreshLivePhotos]);
+
+  // Relative seconds timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSyncSecondsAgo((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Immediate sync on tab focus / visibility
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === "visible") {
+        refreshLivePhotos();
+      }
+    };
+    document.addEventListener("visibilitychange", handleFocus);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", handleFocus);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [refreshLivePhotos]);
 
   // ZIP download modal state
   const [zipModalOpen, setZipModalOpen] = useState(false);
@@ -197,6 +236,16 @@ export default function AlbumDetailPage() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
+      {/* Floating Auto-Sync Notification Toast */}
+      {autoSyncToast && (
+        <div className="fixed top-20 inset-x-4 max-w-md mx-auto z-50 animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-none">
+          <div className="bg-slate-900/95 backdrop-blur-xl text-white px-4 py-3 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+            <p className="text-xs font-bold text-white flex-grow">{autoSyncToast}</p>
+          </div>
+        </div>
+      )}
+
       {/* Album Hero Cover Banner */}
       <section className="relative overflow-hidden bg-slate-950 text-white py-10 sm:py-20">
         {/* Cover Background */}
@@ -233,7 +282,7 @@ export default function AlbumDetailPage() {
               </span>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] sm:text-xs font-medium border border-emerald-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live Synced
+                Auto-Sync Active ({isRefreshingFolder ? "Scanning..." : syncSecondsAgo < 3 ? "Synced Just now" : `Synced ${syncSecondsAgo}s ago`})
               </span>
             </div>
 

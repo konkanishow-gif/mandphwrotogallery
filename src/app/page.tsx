@@ -87,14 +87,36 @@ export default function HomePage() {
     return albums.find((a) => a.id === activeAlbumId) || allPhotosAlbum;
   }, [activeAlbumId, allPhotosAlbum, albums]);
 
+  const [syncSecondsAgo, setSyncSecondsAgo] = useState(0);
+  const [autoSyncToast, setAutoSyncToast] = useState<string | null>(null);
+  const prevPhotosCountRef = React.useRef<number>(0);
+  const prevAlbumsCountRef = React.useRef<number>(0);
+
   // Function to refresh catalog from Google Drive
   const fetchLiveCatalog = useCallback(async (force = false) => {
     try {
       if (force) setIsSyncing(true);
-      const res = await fetch(`/api/drive/catalog${force ? "?refresh=1" : ""}`);
+      const res = await fetch(`/api/drive/catalog${force ? "?refresh=1" : "?autosync=1"}`);
       const data = await res.json();
       if (data?.albums && Array.isArray(data.albums) && data.albums.length > 0) {
+        // Detect if new photos or albums were added
+        const newTotal = data.totalPhotos || data.albums.reduce((s: number, a: any) => s + (a.photoCount || a.photos?.length || 0), 0);
+        const newAlbumCount = data.albums.length;
+
+        if (prevPhotosCountRef.current > 0 && newTotal > prevPhotosCountRef.current) {
+          const diff = newTotal - prevPhotosCountRef.current;
+          setAutoSyncToast(`✨ Auto-Synced: ${diff} new photograph${diff > 1 ? "s" : ""} added live from Google Drive!`);
+          setTimeout(() => setAutoSyncToast(null), 5000);
+        } else if (prevAlbumsCountRef.current > 0 && newAlbumCount > prevAlbumsCountRef.current) {
+          setAutoSyncToast(`📁 Auto-Synced: New Google Drive folder detected and added!`);
+          setTimeout(() => setAutoSyncToast(null), 5000);
+        }
+
+        prevPhotosCountRef.current = newTotal;
+        prevAlbumsCountRef.current = newAlbumCount;
+
         setAlbums(data.albums);
+        setSyncSecondsAgo(0);
         setLastSyncText(
           new Date().toLocaleTimeString([], {
             hour: "2-digit",
@@ -104,19 +126,43 @@ export default function HomePage() {
         );
       }
     } catch (err) {
-      console.log("Drive sync check:", err);
+      console.log("Drive auto-sync check:", err);
     } finally {
       if (force) setIsSyncing(false);
     }
   }, []);
 
-  // Check on mount and periodically in background every 30 seconds
+  // Continuous background Auto-Sync loop (every 12 seconds)
   useEffect(() => {
     fetchLiveCatalog(false);
     const interval = setInterval(() => {
       fetchLiveCatalog(false);
-    }, 30000);
+    }, 12000);
     return () => clearInterval(interval);
+  }, [fetchLiveCatalog]);
+
+  // Relative seconds counter for live auto-sync feedback
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSyncSecondsAgo((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Instant Auto-Sync on Tab Visibility / Focus
+  // When user adds photos to Drive in another tab and returns, it syncs immediately!
+  useEffect(() => {
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        fetchLiveCatalog(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+    };
   }, [fetchLiveCatalog]);
 
   // When active album changes, also fetch live photos for this specific folder
@@ -134,6 +180,7 @@ export default function HomePage() {
                   photos: data.photos,
                   photoCount: data.photoCount || data.photos.length,
                   coverPhoto: data.photos[0] || a.coverPhoto,
+                  subfolders: data.subfolders || a.subfolders,
                   hasLivePhotos: true,
                 };
               }
@@ -242,6 +289,16 @@ export default function HomePage() {
         totalAlbums={albums.length}
       />
 
+      {/* Floating Auto-Sync Notification Toast */}
+      {autoSyncToast && (
+        <div className="fixed top-20 inset-x-4 max-w-md mx-auto z-50 animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-none">
+          <div className="bg-slate-900/95 backdrop-blur-xl text-white px-4 py-3 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+            <p className="text-xs font-bold text-white flex-grow">{autoSyncToast}</p>
+          </div>
+        </div>
+      )}
+
       {/* Main Interactive Photo Gallery Container */}
       <main
         id="gallery-section"
@@ -252,11 +309,20 @@ export default function HomePage() {
           <div>
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Live Google Drive Synchronized
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                Auto-Sync Active (Every 12s)
               </span>
-              <span className="text-xs text-slate-400">
-                Synced: {lastSyncText}
+              <span className="text-xs text-slate-500 font-medium">
+                {isSyncing ? (
+                  <span className="text-[#870069] font-semibold flex items-center gap-1">
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                    Checking Drive...
+                  </span>
+                ) : syncSecondsAgo < 3 ? (
+                  "Synced Just now"
+                ) : (
+                  `Synced ${syncSecondsAgo}s ago`
+                )}
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -279,7 +345,7 @@ export default function HomePage() {
                   isSyncing ? "animate-spin text-[#870069]" : "text-[#FF693C]"
                 }`}
               />
-              <span>{isSyncing ? "Checking Drive..." : "Sync Drive Now"}</span>
+              <span>{isSyncing ? "Scanning Drive..." : "Sync Drive Now"}</span>
             </button>
             <Link
               href="/albums"

@@ -29,15 +29,24 @@ export default function AlbumsPage() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncText, setLastSyncText] = useState("Just now");
+  const [syncSecondsAgo, setSyncSecondsAgo] = useState(0);
+  const [autoSyncToast, setAutoSyncToast] = useState<string | null>(null);
+  const prevCountRef = React.useRef(0);
 
   // Function to refresh catalog from Google Drive
   const fetchLiveCatalog = useCallback(async (force = false) => {
     try {
       if (force) setIsSyncing(true);
-      const res = await fetch(`/api/drive/catalog${force ? "?refresh=1" : ""}`);
+      const res = await fetch(`/api/drive/catalog${force ? "?refresh=1" : "?autosync=1"}`);
       const data = await res.json();
       if (data?.albums && Array.isArray(data.albums) && data.albums.length > 0) {
+        if (prevCountRef.current > 0 && data.albums.length > prevCountRef.current) {
+          setAutoSyncToast("📁 Auto-Synced: New Google Drive album detected!");
+          setTimeout(() => setAutoSyncToast(null), 5000);
+        }
+        prevCountRef.current = data.albums.length;
         setAlbums(data.albums);
+        setSyncSecondsAgo(0);
         setLastSyncText(
           new Date().toLocaleTimeString([], {
             hour: "2-digit",
@@ -47,19 +56,42 @@ export default function AlbumsPage() {
         );
       }
     } catch (err) {
-      console.log("Drive sync check:", err);
+      console.log("Drive auto-sync check:", err);
     } finally {
       if (force) setIsSyncing(false);
     }
   }, []);
 
-  // Check on mount and periodically in background
+  // Continuous background Auto-Sync loop (every 12 seconds)
   useEffect(() => {
     fetchLiveCatalog(false);
     const interval = setInterval(() => {
       fetchLiveCatalog(false);
-    }, 30000);
+    }, 12000);
     return () => clearInterval(interval);
+  }, [fetchLiveCatalog]);
+
+  // Relative seconds counter
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSyncSecondsAgo((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Auto-sync immediately when tab gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === "visible") {
+        fetchLiveCatalog(true);
+      }
+    };
+    document.addEventListener("visibilitychange", handleFocus);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", handleFocus);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [fetchLiveCatalog]);
 
   // Dynamically compute unique categories from albums
@@ -90,6 +122,16 @@ export default function AlbumsPage() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
+      {/* Floating Auto-Sync Notification Toast */}
+      {autoSyncToast && (
+        <div className="fixed top-20 inset-x-4 max-w-md mx-auto z-50 animate-in slide-in-from-top-4 fade-in duration-300 pointer-events-none">
+          <div className="bg-slate-900/95 backdrop-blur-xl text-white px-4 py-3 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping shrink-0" />
+            <p className="text-xs font-bold text-white flex-grow">{autoSyncToast}</p>
+          </div>
+        </div>
+      )}
+
       <main className="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-16 space-y-6 sm:space-y-10">
         {/* Page Title & Breadcrumbs */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -100,6 +142,16 @@ export default function AlbumsPage() {
               </Link>
               <span>/</span>
               <span className="text-[#870069] font-bold">Albums</span>
+            </div>
+
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Auto-Sync Active (Every 12s)
+              </span>
+              <span className="text-xs text-slate-500 font-medium">
+                {isSyncing ? "Checking Drive..." : syncSecondsAgo < 3 ? "Synced Just now" : `Synced ${syncSecondsAgo}s ago`}
+              </span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">

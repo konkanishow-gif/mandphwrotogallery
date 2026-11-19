@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PhotoItem } from "@/data/driveCatalog";
+import { PhotoItem, SubfolderItem } from "@/data/driveCatalog";
 
 function extractCleanId(sskOrStr: string): string {
   const parts = sskOrStr.split(":");
   const last = parts[parts.length - 1];
   return last.replace(/-\d+-\d+$/, "");
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/--+/g, "-")
+    .trim();
 }
 
 async function scrapeDriveFolder(folderId: string): Promise<string> {
@@ -20,6 +29,31 @@ async function scrapeDriveFolder(folderId: string): Promise<string> {
     throw new Error(`Failed to fetch Drive folder ${folderId}: ${response.status}`);
   }
   return await response.text();
+}
+
+function parseFoldersFromHtml(html: string): Array<{ name: string; id: string }> {
+  const folderRegex =
+    /aria-label="([^"]+)\s+Shared folder"[^>]*ssk=['"]([^'"]+)/g;
+  const folders: Array<{ name: string; id: string }> = [];
+  const seenIds = new Set<string>();
+
+  let match;
+  while ((match = folderRegex.exec(html)) !== null) {
+    const rawName = match[1];
+    const rawSsk = match[2];
+    const cleanName = rawName
+      .replace(/&amp;/g, "&")
+      .replace(/&#39;/g, "'")
+      .replace(/&quot;/g, '"')
+      .trim();
+    const cleanId = extractCleanId(rawSsk);
+
+    if (cleanId && !seenIds.has(cleanId)) {
+      seenIds.add(cleanId);
+      folders.push({ name: cleanName, id: cleanId });
+    }
+  }
+  return folders;
 }
 
 function parsePhotosFromHtml(html: string): PhotoItem[] {
@@ -60,12 +94,51 @@ export async function GET(request: NextRequest) {
 
   try {
     const html = await scrapeDriveFolder(folderId);
-    const photos = parsePhotosFromHtml(html);
+    let directPhotos = parsePhotosFromHtml(html);
+    const subFolders = parseFoldersFromHtml(html);
+
+    let allPhotos = [...directPhotos];
+    const subfolderItems: SubfolderItem[] = [];
+
+    // If folder contains subfolders (like Marathon Day 01-13 or Symposium Sessions)
+    if (subFolders.length > 0) {
+      await Promise.all(
+        subFolders.map(async (sf) => {
+          try {
+            const sfHtml = await scrapeDriveFolder(sf.id);
+            const sfPhotos = parsePhotosFromHtml(sfHtml);
+            subfolderItems.push({
+              id: sf.id,
+              name: sf.name,
+              slug: slugify(sf.name),
+              shortTitle: sf.name.split("|")[0].trim(),
+              photoCount: sfPhotos.length,
+              coverPhoto: sfPhotos[0] || null,
+              photos: sfPhotos,
+            });
+            allPhotos.push(...sfPhotos);
+          } catch {
+            subfolderItems.push({
+              id: sf.id,
+              name: sf.name,
+              slug: slugify(sf.name),
+              shortTitle: sf.name.split("|")[0].trim(),
+              photoCount: 0,
+              coverPhoto: null,
+              photos: [],
+            });
+          }
+        })
+      );
+    }
 
     return NextResponse.json({
       folderId,
-      photos,
-      photoCount: photos.length,
+      photos: allPhotos,
+      photoCount: allPhotos.length,
+      hasSubfolders: subfolderItems.length > 0,
+      subfolderCount: subfolderItems.length,
+      subfolders: subfolderItems,
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
