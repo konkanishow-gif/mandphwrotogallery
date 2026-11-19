@@ -16,11 +16,15 @@ import { EVENT_DETAILS, ALBUMS_DATA } from "@/data/driveCatalog";
 interface HeroProps {
   onSearchQuery?: (q: string) => void;
   onOpenSearch?: () => void;
+  totalPhotos?: number;
+  totalAlbums?: number;
 }
 
 export default function Hero({
   onSearchQuery,
   onOpenSearch,
+  totalPhotos,
+  totalAlbums,
 }: HeroProps) {
   const [searchInput, setSearchInput] = useState("");
 
@@ -33,70 +37,70 @@ export default function Hero({
     }
   };
 
-  const heroPhoto =
-    ALBUMS_DATA[1]?.photos[2]?.previewUrl ||
-    ALBUMS_DATA[0]?.photos[0]?.previewUrl ||
-    "";
+  const displayTotalAlbums = totalAlbums ?? ALBUMS_DATA.length;
+  const displayTotalPhotos = totalPhotos ?? EVENT_DETAILS.totalPhotosCount;
 
   return (
-    <section className="relative overflow-hidden bg-slate-950 text-white min-h-[520px] lg:min-h-[580px] flex items-center justify-center">
-      {/* Background Image with subtle dark gradients */}
-      <div className="absolute inset-0 z-0">
-        {heroPhoto && (
-          <img
-            src={heroPhoto}
-            alt="1st World Konkani Music Mega Convention"
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover object-center opacity-25 scale-105 transform animate-fade-in"
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-slate-950/60" />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/70 to-slate-950/90" />
-
-        {/* Ambient Brand Radiant Glows - Matching Logo Colors */}
-        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-[#870069]/30 rounded-full blur-[130px] pointer-events-none" />
-        <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] bg-[#FF693C]/25 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#870069]/20 rounded-full blur-[120px] pointer-events-none" />
+    <section className="relative overflow-hidden bg-slate-950 text-white py-16 sm:py-24 border-b border-slate-800">
+      {/* Background Atmosphere Image with Gradient Overlay */}
+      <div className="absolute inset-0 z-0 opacity-40">
+        <img
+          src="https://lh3.googleusercontent.com/d/1EE4zjtobRAVtx7KKXFJFHgAq0bosrF4G=s1920"
+          alt="1st World Konkani Music Mega Convention"
+          referrerPolicy="no-referrer"
+          className="w-full h-full object-cover scale-105 filter blur-xs"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/90 to-[#0F0210]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20 text-center space-y-6">
-        {/* Cultural Badge Pill */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-semibold uppercase tracking-wider shadow-lg">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#FF693C] animate-ping"></span>
-          <span className="text-amber-300 font-bold">Po&apos;ylo Vishv Konknni So&apos;ngeet Mo&apos;hame&apos;ll</span>
-          <span className="text-white/40">•</span>
-          <span className="text-white font-bold">1st World Konkani Music Mega Convention (Active)</span>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+        {/* Cultural Edition Pill */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-semibold text-white shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>Po&apos;ylo Vishv Konknni So&apos;ngeet Mo&apos;hame&apos;ll (Active)</span>
         </div>
 
-        {/* Hero Main Heading */}
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight max-w-5xl mx-auto">
-          The Official{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF693C] via-amber-300 to-[#FF873C]">
-            Event Photo Library
-          </span>
+        {/* Main Hero Headline */}
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto">
+          1st World Konkani Music Mega Convention
         </h1>
 
-        {/* Subtitle */}
-        <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-          High-definition photographic archives of the historic 13-day convention presented by{" "}
-          <strong className="text-white">Mandd Sobhann</strong> at Kalaangann, Mangalore.
+        <p className="text-sm sm:text-base md:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
+          The official high-resolution photographic archive powered directly by Google Drive.
+          Preserving, promoting, and celebrating Konkani music across the globe.
         </p>
 
-        {/* Large Prominent Search Bar */}
-        <div className="mt-8 max-w-2xl mx-auto">
+        {/* Venue, Date & Organizer Bar */}
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-slate-300">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-4 h-4 text-[#FF693C]" />
+            <span>3 - 15 November, 2026</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-[#FF693C]" />
+            <span>Kalaangann, Mangalore</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>Mandd Sobhann Media Cell</span>
+          </div>
+        </div>
+
+        {/* Central Search Bar */}
+        <div className="pt-4 max-w-2xl mx-auto">
           <form
             onSubmit={handleSearchSubmit}
-            className="relative flex items-center shadow-2xl rounded-2xl overflow-hidden bg-white/95 p-1.5 border border-white/20 backdrop-blur-xl focus-within:ring-4 focus-within:ring-[#870069]/40 transition-all"
+            className="flex items-center gap-2 p-1.5 sm:p-2 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl focus-within:border-[#FF693C] transition-all"
           >
-            <div className="pl-4 text-slate-400">
-              <Search className="w-5 h-5 text-[#870069]" />
+            <div className="pl-3 text-slate-400">
+              <Search className="w-5 h-5" />
             </div>
             <input
               type="text"
+              placeholder="Search photographs, dignitaries, events..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by photo filename, session, ceremony, date..."
-              className="w-full px-3 py-3 text-slate-900 placeholder-slate-400 text-sm sm:text-base outline-none bg-transparent font-medium"
+              className="w-full bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none px-2 py-2"
             />
             <button
               type="submit"
@@ -110,7 +114,7 @@ export default function Hero({
           {/* Quick search tags */}
           <div className="mt-3 flex items-center justify-center gap-2 flex-wrap text-xs text-slate-300">
             <span className="text-slate-400 font-medium">Quick Filter:</span>
-            {["Welcoming CM", "Grand Inauguration", "Guinness Marathon", "Kalaangann"].map(
+            {["Grand Inauguration", "Welcoming CM", "Singing Marathon", "Valedictory"].map(
               (tag) => (
                 <button
                   key={tag}
@@ -127,25 +131,27 @@ export default function Hero({
           </div>
         </div>
 
-        {/* 4 Feature Highlights / Statistics Counters */}
+        {/* 4 Feature Highlights / Real-Time Statistics Counters */}
         <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
           <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md text-center hover:bg-white/10 transition-colors">
-            <div className="text-2xl sm:text-3xl font-extrabold text-white">
-              {ALBUMS_DATA.length}
+            <div className="text-2xl sm:text-3xl font-extrabold text-white flex items-center justify-center gap-1">
+              <span>{displayTotalAlbums}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Live Google Drive Sync" />
             </div>
             <div className="text-xs text-slate-300 font-medium mt-1 flex items-center justify-center gap-1">
               <Layers className="w-3.5 h-3.5 text-amber-300" />
-              <span>Event Albums</span>
+              <span>Real-Time Albums</span>
             </div>
           </div>
 
           <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md text-center hover:bg-white/10 transition-colors">
-            <div className="text-2xl sm:text-3xl font-extrabold text-[#FF693C]">
-              {EVENT_DETAILS.totalPhotosCount}+
+            <div className="text-2xl sm:text-3xl font-extrabold text-[#FF693C] flex items-center justify-center gap-1">
+              <span>{displayTotalPhotos}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF693C] animate-pulse" title="Live Photos Count" />
             </div>
             <div className="text-xs text-slate-300 font-medium mt-1 flex items-center justify-center gap-1">
               <Camera className="w-3.5 h-3.5 text-[#FF693C]" />
-              <span>Original HD Photos</span>
+              <span>HD Photographs</span>
             </div>
           </div>
 
@@ -165,7 +171,7 @@ export default function Hero({
             </div>
             <div className="text-xs text-slate-300 font-medium mt-1 flex items-center justify-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Master Quality</span>
+              <span>Drive Masters</span>
             </div>
           </div>
         </div>

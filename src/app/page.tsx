@@ -167,7 +167,11 @@ export default function HomePage() {
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
       {/* Hero Section */}
-      <Hero onOpenSearch={() => setSearchModalOpen(true)} />
+      <Hero
+        onOpenSearch={() => setSearchModalOpen(true)}
+        totalPhotos={albums.reduce((acc, curr) => acc + (curr.photoCount || 0), 0)}
+        totalAlbums={albums.length}
+      />
 
       {/* Main Interactive Photo Gallery Container */}
       <main
@@ -296,6 +300,7 @@ export default function HomePage() {
       <SearchModal
         isOpen={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
+        albums={albums}
       />
 
       {/* Footer */}

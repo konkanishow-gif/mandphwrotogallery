@@ -270,6 +270,7 @@ export default function AlbumsPage() {
       <SearchModal
         isOpen={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
+        albums={albums}
       />
 
       <Footer />

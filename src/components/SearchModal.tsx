@@ -18,12 +18,14 @@ interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectAlbum?: (album: AlbumItem) => void;
+  albums?: AlbumItem[];
 }
 
 export default function SearchModal({
   isOpen,
   onClose,
   onSelectAlbum,
+  albums = ALBUMS_DATA,
 }: SearchModalProps) {
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -41,102 +43,96 @@ export default function SearchModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const categories = [
-    "All",
-    "Ceremonies",
-    "VVIP Visits",
-    "Exhibition",
-    "Performances",
-    "Culinary",
-    "Ambience",
-    "World Record",
-  ];
+  // Compute dynamic categories from the live albums
+  const dynamicCategories = useMemo(() => {
+    const cats = new Set<string>();
+    cats.add("All");
+    albums.forEach((a) => {
+      if (a.category) cats.add(a.category);
+    });
+    return Array.from(cats);
+  }, [albums]);
 
   // Search Results
   const filteredAlbums = useMemo(() => {
-    return ALBUMS_DATA.filter((album) => {
+    return albums.filter((album) => {
       const matchesCat =
         selectedCategory === "All" || album.category === selectedCategory;
       const q = query.toLowerCase();
-      const matchesQuery =
+      const matchesQ =
         !query ||
         album.name.toLowerCase().includes(q) ||
         album.category.toLowerCase().includes(q) ||
         album.description.toLowerCase().includes(q) ||
-        album.location.toLowerCase().includes(q) ||
-        album.date.toLowerCase().includes(q);
-      return matchesCat && matchesQuery;
-    });
-  }, [query, selectedCategory]);
+        album.photos.some((p) => p.name.toLowerCase().includes(q));
 
-  // Photo Matches
+      return matchesCat && matchesQ;
+    });
+  }, [albums, query, selectedCategory]);
+
+  // Matched individual photos
   const matchedPhotos = useMemo(() => {
     if (!query || query.length < 2) return [];
     const q = query.toLowerCase();
-    const results: { photo: PhotoItem; album: AlbumItem }[] = [];
+    const results: Array<{ photo: PhotoItem; album: AlbumItem }> = [];
 
-    for (const album of ALBUMS_DATA) {
+    for (const album of albums) {
       for (const photo of album.photos) {
         if (photo.name.toLowerCase().includes(q)) {
           results.push({ photo, album });
-          if (results.length >= 8) return results;
+          if (results.length >= 12) break;
         }
       }
+      if (results.length >= 12) break;
     }
     return results;
-  }, [query]);
+  }, [albums, query]);
 
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-start justify-center pt-16 sm:pt-24 p-4 animate-in fade-in duration-200"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Search Input Box */}
-        <div className="relative p-4 sm:p-5 border-b border-slate-100 flex items-center gap-3">
+    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-start justify-center p-4 sm:p-6 md:p-10 animate-in fade-in duration-200 overflow-y-auto">
+      <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+        {/* Search Header Bar */}
+        <div className="relative p-4 sm:p-6 border-b border-slate-100 flex items-center gap-3">
           <Search className="w-5 h-5 text-[#870069] shrink-0" />
           <input
             type="text"
+            autoFocus
+            placeholder="Search filenames (e.g., DSC_7494, AVDM1594), sessions, albums..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search albums, sessions, photo filenames (e.g. DSC_7494)..."
-            autoFocus
-            className="w-full text-sm sm:text-base text-slate-900 placeholder-slate-400 outline-none font-medium"
+            className="w-full text-sm sm:text-base text-slate-900 placeholder-slate-400 focus:outline-none bg-transparent"
           />
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="text-slate-400 hover:text-slate-600 text-xs font-semibold px-2 py-1 bg-slate-100 rounded-lg cursor-pointer"
+              className="p-1 rounded-md text-slate-400 hover:text-slate-600 cursor-pointer"
             >
-              Clear
+              <X className="w-4 h-4" />
             </button>
           )}
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer text-xs font-semibold px-3"
           >
-            <X className="w-5 h-5" />
+            Esc
           </button>
         </div>
 
-        {/* Category Pills */}
-        <div className="px-5 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
-            Filter:
+        {/* Dynamic Category Chips */}
+        <div className="p-3 sm:px-6 bg-slate-50/80 border-b border-slate-100 flex items-center gap-2 overflow-x-auto scrollbar-none">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+            Category:
           </span>
-          {categories.map((cat) => (
+          {dynamicCategories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-colors whitespace-nowrap cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 selectedCategory === cat
-                  ? "bg-gradient-to-r from-[#870069] to-[#FF693C] text-white shadow-xs"
-                  : "bg-white text-slate-600 hover:bg-slate-200/60 border border-slate-200"
+                  ? "bg-[#870069] text-white shadow-2xs"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
               }`}
             >
               {cat}
@@ -144,78 +140,77 @@ export default function SearchModal({
           ))}
         </div>
 
-        {/* Results List */}
-        <div className="overflow-y-auto p-4 sm:p-5 space-y-6">
+        {/* Content Body */}
+        <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto space-y-6">
           {/* Matched Albums */}
-          <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
               <span>Matching Albums ({filteredAlbums.length})</span>
+              <span className="text-[11px] text-[#870069] lowercase font-normal">
+                {query ? `matching "${query}"` : "all live albums"}
+              </span>
             </div>
 
-            {filteredAlbums.length > 0 ? (
-              <div className="space-y-2">
-                {filteredAlbums.map((album) => (
-                  <div
-                    key={album.id}
-                    onClick={() => {
-                      onSelectAlbum?.(album);
-                      onClose();
-                    }}
-                    className="p-3 rounded-2xl border border-slate-200/80 hover:border-[#870069] hover:bg-purple-50/40 transition-all flex items-center justify-between gap-3 cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-xl bg-slate-900 overflow-hidden shrink-0">
-                        {album.coverPhoto && (
-                          <img
-                            src={album.coverPhoto.thumbUrl}
-                            alt={album.name}
-                            referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover"
-                          />
-                        )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {filteredAlbums.map((album) => (
+                <Link
+                  key={album.id}
+                  href={`/album/${album.slug}`}
+                  onClick={onClose}
+                  className="p-3 rounded-2xl border border-slate-200 hover:border-[#870069]/40 hover:bg-purple-50/30 transition-all flex items-center gap-3 group"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                    {album.coverPhoto ? (
+                      <img
+                        src={album.coverPhoto.thumbUrl}
+                        alt={album.name}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-400">
+                        <Camera className="w-5 h-5" />
                       </div>
-                      <div className="min-w-0">
-                        <span className="block text-xs sm:text-sm font-bold text-slate-900 group-hover:text-[#870069] truncate">
-                          {album.name}
-                        </span>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                          <span>{album.date}</span>
-                          <span>•</span>
-                          <span>{album.photoCount} Photos</span>
-                          <span>•</span>
-                          <span className="text-[#870069] font-semibold">{album.category}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#870069] group-hover:translate-x-1 transition-all shrink-0" />
+                    )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-xs text-slate-400">
-                No albums match your search query.
+                  <div className="min-w-0 flex-grow">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF693C] block truncate">
+                      {album.category}
+                    </span>
+                    <h5 className="font-bold text-xs sm:text-sm text-slate-900 truncate group-hover:text-[#870069] transition-colors">
+                      {album.name}
+                    </h5>
+                    <span className="text-[11px] text-slate-400 block">
+                      {album.photoCount} HD photographs
+                    </span>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#870069] transition-colors shrink-0" />
+                </Link>
+              ))}
+            </div>
+
+            {filteredAlbums.length === 0 && (
+              <div className="py-8 text-center text-xs text-slate-400">
+                No albums matched your query.
               </div>
             )}
           </div>
 
-          {/* Matched Specific Photos if any */}
+          {/* Matched Photos by Filename */}
           {matchedPhotos.length > 0 && (
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                Matching Photos ({matchedPhotos.length})
+            <div className="space-y-3 pt-4 border-t border-slate-100">
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Matching Photo Filenames ({matchedPhotos.length})
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {matchedPhotos.map(({ photo, album }) => (
-                  <div
+                  <Link
                     key={photo.id}
-                    onClick={() => {
-                      onSelectAlbum?.(album);
-                      onClose();
-                    }}
-                    className="group rounded-xl overflow-hidden border border-slate-200 bg-white hover:border-[#870069] cursor-pointer"
+                    href={`/album/${album.slug}`}
+                    onClick={onClose}
+                    className="group rounded-xl border border-slate-200 overflow-hidden hover:border-[#870069] transition-all bg-slate-900"
                   >
-                    <div className="aspect-[4/3] bg-slate-900 overflow-hidden">
+                    <div className="relative aspect-[3/2] overflow-hidden">
                       <img
                         src={photo.thumbUrl}
                         alt={photo.name}
@@ -223,24 +218,25 @@ export default function SearchModal({
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                       />
                     </div>
-                    <div className="p-2 text-[10px] truncate">
-                      <span className="font-mono font-bold block truncate text-slate-900">
+                    <div className="p-2 bg-white">
+                      <span className="block font-mono text-[10px] font-bold text-slate-800 truncate">
                         {photo.name}
                       </span>
-                      <span className="text-slate-400 truncate block">
+                      <span className="block text-[10px] text-slate-400 truncate">
                         {album.shortTitle}
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer info */}
-        <div className="p-3 bg-slate-50 border-t border-slate-100 text-center text-xs text-slate-400">
-          Tip: Search by Google Drive filename (e.g. DSC_7494, AVDM1831) or session title.
+        {/* Search Modal Footer */}
+        <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 px-6">
+          <span>Search matches live Google Drive catalog</span>
+          <span>Press ESC to close</span>
         </div>
       </div>
     </div>
