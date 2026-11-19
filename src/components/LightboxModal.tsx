@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   X,
   ChevronLeft,
@@ -38,15 +38,34 @@ export default function LightboxModal({
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showInfo, setShowInfo] = useState(false);
   const [imgLoading, setImgLoading] = useState(true);
+  const [retryIndex, setRetryIndex] = useState(0);
 
   // Sync index when initialIndex changes
   useEffect(() => {
     setCurrentIndex(initialIndex);
     setZoomLevel(1);
     setImgLoading(true);
+    setRetryIndex(0);
   }, [initialIndex, isOpen]);
 
   const currentPhoto = photos[currentIndex];
+
+  useEffect(() => {
+    setRetryIndex(0);
+    setImgLoading(true);
+  }, [currentIndex, currentPhoto?.id]);
+
+  const previewSources = useMemo(() => {
+    if (!currentPhoto) return [];
+    return [
+      `https://drive.google.com/thumbnail?id=${currentPhoto.id}&sz=w1920`,
+      currentPhoto.previewUrl,
+      `/api/drive/image?id=${currentPhoto.id}&sz=1920`,
+      currentPhoto.fullUrl,
+    ];
+  }, [currentPhoto]);
+
+  const currentPreviewSrc = previewSources[retryIndex] || currentPhoto?.previewUrl;
 
   const handleNext = useCallback(() => {
     if (currentIndex < photos.length - 1) {
@@ -232,10 +251,17 @@ export default function LightboxModal({
           style={{ transform: `scale(${zoomLevel})` }}
         >
           <img
-            src={currentPhoto.previewUrl}
+            src={currentPreviewSrc}
             alt={currentPhoto.name}
             referrerPolicy="no-referrer"
             onLoad={() => setImgLoading(false)}
+            onError={() => {
+              if (retryIndex < previewSources.length - 1) {
+                setRetryIndex((prev) => prev + 1);
+              } else {
+                setImgLoading(false);
+              }
+            }}
             className="max-w-full max-h-[72vh] rounded-2xl shadow-2xl object-contain border border-slate-800 select-none"
           />
         </div>

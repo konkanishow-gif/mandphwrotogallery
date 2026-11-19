@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Download,
   Share2,
@@ -35,13 +35,18 @@ export default function PhotoCard({
 
   // Progressive Google Drive URLs if one endpoint experiences network throttling
   const imageSources = [
+    `https://drive.google.com/thumbnail?id=${photo.id}&sz=w800`,
     photo.thumbUrl,
-    `https://drive.google.com/thumbnail?id=${photo.id}&sz=w1000`,
-    `https://drive.google.com/uc?export=view&id=${photo.id}`,
+    `/api/drive/image?id=${photo.id}&sz=800`,
     photo.previewUrl,
   ];
 
   const currentSrc = imageSources[retryIndex] || photo.thumbUrl;
+
+  useEffect(() => {
+    setRetryIndex(0);
+    setLoaded(false);
+  }, [photo.id]);
 
   const handleDownloadDirect = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -139,62 +144,53 @@ export default function PhotoCard({
         {/* Hover Overlay with Action Buttons */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-end p-3 z-10">
           <div className="flex items-center justify-between gap-2">
-            {/* Quick Preview button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenLightbox(index);
-              }}
-              className="p-2 rounded-xl bg-white/95 hover:bg-white text-slate-800 shadow-md backdrop-blur-md transition-transform hover:scale-110 cursor-pointer"
-              title="Full Screen Preview"
-            >
-              <Maximize2 className="w-4 h-4 text-[#870069]" />
-            </button>
+            {/* Resolution indicator */}
+            <span className="text-[10px] text-white/90 font-medium truncate flex items-center gap-1">
+              <Camera className="w-3 h-3 text-[#FF693C]" />
+              <span>Drive Master HD</span>
+            </span>
 
+            {/* Quick Action Icons */}
             <div className="flex items-center gap-1.5">
-              {/* WhatsApp Share Button */}
               <button
                 onClick={handleWhatsAppShare}
-                className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-transform hover:scale-110 cursor-pointer"
-                title="Share photo on WhatsApp"
+                className="p-1.5 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 text-white transition-colors cursor-pointer"
+                title="Share this photograph on WhatsApp"
               >
-                <Share2 className="w-4 h-4" />
+                <Share2 className="w-3.5 h-3.5" />
               </button>
 
-              {/* Direct Download Button */}
               <button
                 onClick={handleDownloadDirect}
-                className="p-2 rounded-xl bg-gradient-to-r from-[#FF693C] to-[#870069] hover:opacity-95 text-white shadow-md transition-transform hover:scale-110 cursor-pointer"
-                title={`Download ${photo.name}`}
+                className="p-1.5 rounded-lg bg-[#870069]/90 hover:bg-[#870069] text-white transition-colors cursor-pointer"
+                title={`Download original ${photo.name}`}
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenLightbox(index);
+                }}
+                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
+                title="Open full-screen preview"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Card Caption / Google Drive Filename Bar */}
-      <div className="p-3 bg-white flex items-center justify-between gap-2 border-t border-slate-100">
-        <div className="min-w-0">
-          <span className="block text-xs font-mono font-bold text-slate-900 truncate">
-            {photo.name}
-          </span>
-          <span className="block text-[10px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
-            <Camera className="w-3 h-3 text-[#870069]" />
-            <span>Original HD Master</span>
-          </span>
-        </div>
-
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenLightbox(index);
-          }}
-          className="text-[11px] font-bold text-[#870069] hover:text-[#FF693C] hover:underline shrink-0"
-        >
-          View HD &rarr;
-        </button>
+      {/* Card Footer: Exact Google Drive Filename & Album Attribution */}
+      <div className="p-3 bg-white flex items-center justify-between text-xs border-t border-slate-100">
+        <span className="font-mono text-[11px] font-bold text-slate-800 truncate" title={photo.name}>
+          {photo.name}
+        </span>
+        <span className="text-[10px] text-slate-400 font-medium shrink-0 ml-1">
+          {album.shortTitle}
+        </span>
       </div>
     </div>
   );
