@@ -21,7 +21,7 @@ interface PhotoGridProps {
   onLoadedCountChange?: (count: number) => void;
 }
 
-const BATCH_SIZE = 24;
+const BATCH_SIZE = 48;
 
 export default function PhotoGrid({
   photos,

@@ -11,6 +11,7 @@ import {
   ArrowRight,
   CheckCircle2,
   RefreshCw,
+  Zap,
 } from "lucide-react";
 import { ALBUMS_DATA, AlbumItem, PhotoItem, EVENT_DETAILS } from "@/data/driveCatalog";
 import Navbar from "@/components/Navbar";
@@ -26,7 +27,7 @@ import { downloadPhotosAsZip, ZipProgressState } from "@/utils/zipDownload";
 
 export default function HomePage() {
   const [albums, setAlbums] = useState<AlbumItem[]>(ALBUMS_DATA);
-  const [activeAlbum, setActiveAlbum] = useState<AlbumItem>(ALBUMS_DATA[0]);
+  const [activeAlbumId, setActiveAlbumId] = useState<string>("all-photos");
   const [activeSubfolder, setActiveSubfolder] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
@@ -34,9 +35,57 @@ export default function HomePage() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [loadedCount, setLoadedCount] = useState(24);
+  const [loadedCount, setLoadedCount] = useState(48);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncText, setLastSyncText] = useState("Just now");
+
+  // Synthetic "All Photographs" collection encompassing the entire Google Drive
+  const allPhotosAlbum: AlbumItem = useMemo(() => {
+    const all: PhotoItem[] = [];
+    const seen = new Set<string>();
+    for (const a of albums) {
+      for (const p of a.photos) {
+        if (!seen.has(p.id)) {
+          seen.add(p.id);
+          all.push(p);
+        }
+      }
+    }
+    return {
+      id: "all-photos",
+      name: "All Photographs (Full Mega Convention)",
+      slug: "all-photos",
+      shortTitle: "All Photographs",
+      category: "Full Event Archive",
+      date: "03 - 15 Nov 2026",
+      location: "Kalaangann, Mangalore",
+      photographer: "Mandd Sobhann Media Cell",
+      description:
+        "Comprehensive live photographic archive containing all 1,000+ photographs across all sessions and events.",
+      driveFolderUrl: EVENT_DETAILS.rootDriveUrl,
+      photoCount: all.length,
+      hasSubfolders: false,
+      subfolderCount: 0,
+      coverPhoto: all[0] || null,
+      photos: all,
+      isDriveConnected: true,
+      year: 2026,
+      hasLivePhotos: all.length > 0,
+    };
+  }, [albums]);
+
+  // Combined list of display albums with All-Photos as primary option
+  const displayAlbums = useMemo(() => {
+    return [allPhotosAlbum, ...albums];
+  }, [allPhotosAlbum, albums]);
+
+  // Current active album
+  const activeAlbum = useMemo(() => {
+    if (activeAlbumId === "all-photos") {
+      return allPhotosAlbum;
+    }
+    return albums.find((a) => a.id === activeAlbumId) || allPhotosAlbum;
+  }, [activeAlbumId, allPhotosAlbum, albums]);
 
   // Function to refresh catalog from Google Drive
   const fetchLiveCatalog = useCallback(async (force = false) => {
@@ -46,10 +95,6 @@ export default function HomePage() {
       const data = await res.json();
       if (data?.albums && Array.isArray(data.albums) && data.albums.length > 0) {
         setAlbums(data.albums);
-        setActiveAlbum((prev) => {
-          const match = data.albums.find((a: AlbumItem) => a.id === prev.id);
-          return match || data.albums[0];
-        });
         setLastSyncText(
           new Date().toLocaleTimeString([], {
             hour: "2-digit",
@@ -76,21 +121,25 @@ export default function HomePage() {
 
   // When active album changes, also fetch live photos for this specific folder
   useEffect(() => {
-    if (!activeAlbum?.id) return;
+    if (!activeAlbum?.id || activeAlbum.id === "all-photos") return;
     fetch(`/api/drive/folder?id=${activeAlbum.id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data?.photos && Array.isArray(data.photos) && data.photos.length > 0) {
-          setActiveAlbum((prev) => {
-            if (prev.id !== activeAlbum.id) return prev;
-            return {
-              ...prev,
-              photos: data.photos,
-              photoCount: data.photoCount || data.photos.length,
-              coverPhoto: data.photos[0] || prev.coverPhoto,
-              hasLivePhotos: true,
-            };
-          });
+          setAlbums((prevAlbums) =>
+            prevAlbums.map((a) => {
+              if (a.id === activeAlbum.id) {
+                return {
+                  ...a,
+                  photos: data.photos,
+                  photoCount: data.photoCount || data.photos.length,
+                  coverPhoto: data.photos[0] || a.coverPhoto,
+                  hasLivePhotos: true,
+                };
+              }
+              return a;
+            })
+          );
         }
       })
       .catch(() => {});
@@ -107,10 +156,12 @@ export default function HomePage() {
   });
 
   // Filter albums by category for the switcher
-  const filteredAlbums =
-    selectedCategory === "All"
-      ? albums
-      : albums.filter((a) => a.category === selectedCategory);
+  const filteredAlbums = useMemo(() => {
+    if (selectedCategory === "All") {
+      return displayAlbums;
+    }
+    return displayAlbums.filter((a) => a.category === selectedCategory);
+  }, [selectedCategory, displayAlbums]);
 
   // Active photos based on subfolder selection
   const currentPhotos = useMemo(() => {
@@ -169,7 +220,7 @@ export default function HomePage() {
     setLightboxOpen(true);
   };
 
-  // Visible sliced photos for infinite scroll simulation
+  // Visible sliced photos for infinite scroll
   const visiblePhotos = currentPhotos.slice(0, loadedCount);
 
   // Selected photos array for SelectionBar
@@ -177,9 +228,7 @@ export default function HomePage() {
     selectedPhotoIds.includes(p.id)
   );
 
-  const totalPhotosCount = useMemo(() => {
-    return albums.reduce((acc, curr) => acc + (curr.photoCount || 0), 0);
-  }, [albums]);
+  const totalPhotosCount = allPhotosAlbum.photoCount;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
@@ -214,7 +263,7 @@ export default function HomePage() {
               Convention Photo Library
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Select an official Google Drive folder below to explore photographs in master resolution.
+              Select an official Google Drive folder below or explore all {totalPhotosCount} photographs in master resolution.
             </p>
           </div>
 
@@ -247,9 +296,9 @@ export default function HomePage() {
           albums={filteredAlbums}
           activeAlbum={activeAlbum}
           onSelectAlbum={(album) => {
-            setActiveAlbum(album);
+            setActiveAlbumId(album.id);
             setActiveSubfolder("all");
-            setLoadedCount(24);
+            setLoadedCount(48);
           }}
           loadedCount={visiblePhotos.length}
           totalCount={currentPhotos.length}
@@ -263,7 +312,7 @@ export default function HomePage() {
           activeSubfolder={activeSubfolder}
           onSelectSubfolder={(sub) => {
             setActiveSubfolder(sub);
-            setLoadedCount(24);
+            setLoadedCount(48);
           }}
         />
 
@@ -277,20 +326,31 @@ export default function HomePage() {
           onOpenLightbox={handleOpenLightbox}
         />
 
-        {/* Progressive Load More Button */}
+        {/* Progressive Load More Controls */}
         {loadedCount < currentPhotos.length && (
-          <div className="pt-8 pb-4 flex flex-col items-center gap-2">
-            <button
-              onClick={() => setLoadedCount((prev) => prev + 24)}
-              className="px-8 py-3.5 rounded-full text-xs sm:text-sm font-bold bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center gap-2 hover:border-[#870069]/40"
-            >
-              <Camera className="w-4 h-4 text-[#870069]" />
-              <span>
-                Load More Photographs ({currentPhotos.length - loadedCount} remaining)
-              </span>
-            </button>
+          <div className="pt-8 pb-4 flex flex-col items-center gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={() => setLoadedCount((prev) => prev + 48)}
+                className="px-8 py-3.5 rounded-full text-xs sm:text-sm font-bold bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center gap-2 hover:border-[#870069]/40"
+              >
+                <Camera className="w-4 h-4 text-[#870069]" />
+                <span>
+                  Load More ({Math.min(48, currentPhotos.length - loadedCount)} of{" "}
+                  {currentPhotos.length - loadedCount} remaining)
+                </span>
+              </button>
+
+              <button
+                onClick={() => setLoadedCount(currentPhotos.length)}
+                className="px-6 py-3.5 rounded-full text-xs sm:text-sm font-bold bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center gap-2"
+              >
+                <Zap className="w-4 h-4 text-amber-300" />
+                <span>Load All Remaining ({currentPhotos.length - loadedCount})</span>
+              </button>
+            </div>
             <span className="text-[11px] text-slate-400">
-              Showing {loadedCount} of {currentPhotos.length} in this session
+              Showing {loadedCount} of {currentPhotos.length} photographs in this view
             </span>
           </div>
         )}
