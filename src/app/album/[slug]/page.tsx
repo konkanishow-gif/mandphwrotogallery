@@ -138,8 +138,9 @@ export default function AlbumDetailPage() {
   const displayedPhotos = useMemo(() => {
     let list = [...currentAlbum.photos];
     if (selectedSubfolder !== "All" && currentAlbum.subfolders) {
-      // Find matching subfolder in albums to get its photos
-      const sub = albums.find((a) => a.name === selectedSubfolder || a.slug === selectedSubfolder);
+      const sub = currentAlbum.subfolders.find(
+        (sf) => sf.name === selectedSubfolder || sf.slug === selectedSubfolder
+      );
       if (sub && sub.photos.length > 0) {
         list = sub.photos;
       }
@@ -150,7 +151,7 @@ export default function AlbumDetailPage() {
       list.sort((a, b) => b.name.localeCompare(a.name));
     }
     return list;
-  }, [currentAlbum, selectedSubfolder, albums, sortOption]);
+  }, [currentAlbum, selectedSubfolder, sortOption]);
 
   const handleToggleSelect = (photoId: string) => {
     setSelectedPhotoIds((prev) =>
@@ -353,7 +354,7 @@ export default function AlbumDetailPage() {
                         : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
-                    {sf.name.split("|")[0].trim()} ({sf.count || 50})
+                    {sf.shortTitle || sf.name.split("|")[0].trim()} ({sf.photoCount} HD)
                   </button>
                 );
               })}

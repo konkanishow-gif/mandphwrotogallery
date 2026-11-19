@@ -9,8 +9,9 @@ import {
   Sparkles,
   Camera,
   RefreshCw,
+  FolderOpen,
 } from "lucide-react";
-import { AlbumItem } from "@/data/driveCatalog";
+import { AlbumItem, SubfolderItem } from "@/data/driveCatalog";
 import { shareAlbumOnWhatsApp } from "@/utils/whatsapp";
 
 interface EventSwitcherProps {
@@ -26,6 +27,8 @@ interface EventSwitcherProps {
   onSelectCategory: (cat: string) => void;
   onRefreshLive?: () => void;
   isRefreshing?: boolean;
+  activeSubfolder?: string;
+  onSelectSubfolder?: (subfolderSlug: string) => void;
 }
 
 export default function EventSwitcher({
@@ -41,8 +44,10 @@ export default function EventSwitcher({
   onSelectCategory,
   onRefreshLive,
   isRefreshing = false,
+  activeSubfolder = "all",
+  onSelectSubfolder,
 }: EventSwitcherProps) {
-  // Dynamically compute unique categories from albums
+  // Dynamically compute unique categories from root albums
   const dynamicCategories = useMemo(() => {
     const cats = new Set<string>();
     cats.add("All");
@@ -60,7 +65,7 @@ export default function EventSwitcher({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-grow">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap pl-1">
-            Filter:
+            Category:
           </span>
           {dynamicCategories.map((cat) => {
             const isSelected = selectedCategory === cat;
@@ -97,58 +102,111 @@ export default function EventSwitcher({
         )}
       </div>
 
-      {/* Featured Album Switcher Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+      {/* Main Drive Folders Grid (Clean 8 Main Albums) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {albums.map((album) => {
           const isActive = album.id === activeAlbum.id;
           const hasPhotos = album.photoCount > 0;
           return (
             <button
               key={album.id}
-              onClick={() => onSelectAlbum(album)}
-              className={`p-3.5 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 border ${
+              onClick={() => {
+                onSelectAlbum(album);
+                onSelectSubfolder?.("all");
+              }}
+              className={`p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 border ${
                 isActive
                   ? "bg-gradient-to-r from-[#870069] to-[#6A0050] text-white border-[#870069] shadow-md scale-[1.01]"
                   : "bg-white hover:bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-300"
               }`}
             >
-              <div className="min-w-0">
-                <span
-                  className={`block text-[10px] font-bold uppercase tracking-wider ${
-                    isActive ? "text-[#FF873C]" : "text-[#870069]"
-                  }`}
-                >
-                  {album.category}
-                </span>
-                <span className="block font-bold text-xs sm:text-sm truncate mt-0.5">
+              <div className="w-full">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span
+                    className={`block text-[10px] font-bold uppercase tracking-wider truncate ${
+                      isActive ? "text-[#FF873C]" : "text-[#870069]"
+                    }`}
+                  >
+                    {album.category}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                      isActive
+                        ? "bg-[#FF693C] text-white shadow-2xs"
+                        : hasPhotos
+                        ? "bg-purple-100 text-[#870069]"
+                        : "bg-slate-100 text-slate-400"
+                    }`}
+                  >
+                    {album.hasSubfolders
+                      ? `${album.subfolderCount} Sessions • ${album.photoCount} HD`
+                      : hasPhotos
+                      ? `${album.photoCount} HD`
+                      : "Empty Folder"}
+                  </span>
+                </div>
+
+                <span className="block font-bold text-sm sm:text-base leading-snug line-clamp-2">
                   {album.name}
-                </span>
-                <span
-                  className={`block text-[11px] mt-0.5 ${
-                    isActive ? "text-purple-200" : "text-slate-400"
-                  }`}
-                >
-                  {album.date}
                 </span>
               </div>
 
-              <div className="shrink-0 flex flex-col items-end gap-1">
-                <span
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                    isActive
-                      ? "bg-[#FF693C] text-white shadow-2xs"
-                      : hasPhotos
-                      ? "bg-purple-100 text-[#870069]"
-                      : "bg-amber-100 text-amber-800"
-                  }`}
-                >
-                  {hasPhotos ? `${album.photoCount} HD` : "Live Folder"}
-                </span>
+              <div
+                className={`text-[11px] pt-2 border-t ${
+                  isActive ? "border-white/20 text-purple-200" : "border-slate-100 text-slate-400"
+                } flex items-center justify-between`}
+              >
+                <span>{album.date}</span>
+                <span>{album.location.split(",")[0]}</span>
               </div>
             </button>
           );
         })}
       </div>
+
+      {/* If Active Album has Subfolders (like Guinness Marathon Day 01-13 or Symposium Sessions) */}
+      {activeAlbum.hasSubfolders && activeAlbum.subfolders && activeAlbum.subfolders.length > 0 && (
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <FolderOpen className="w-4 h-4 text-[#870069]" />
+              Explore Sessions / Days inside {activeAlbum.shortTitle}:
+            </span>
+            <span className="text-[11px] text-slate-400">
+              {activeAlbum.subfolderCount} Subfolders in Google Drive
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              onClick={() => onSelectSubfolder?.("all")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                activeSubfolder === "all"
+                  ? "bg-[#870069] text-white shadow-xs"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              All Sessions ({activeAlbum.photoCount} Photos)
+            </button>
+            {activeAlbum.subfolders.map((sf) => {
+              const isSelected = activeSubfolder === sf.slug;
+              return (
+                <button
+                  key={sf.id}
+                  onClick={() => onSelectSubfolder?.(sf.slug)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    isSelected
+                      ? "bg-[#870069] text-white shadow-xs"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  {sf.shortTitle} ({sf.photoCount} HD)
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Active Session Info Bar */}
       <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -174,7 +232,7 @@ export default function EventSwitcher({
             </span>
             <span className="text-slate-300">•</span>
             <span className="text-slate-500 font-mono text-[11px]">
-              {activeAlbum.photoCount} High-Resolution Photographs
+              {totalCount} High-Resolution Photographs
             </span>
           </div>
         </div>
@@ -216,16 +274,16 @@ export default function EventSwitcher({
           {/* Download Entire Album ZIP */}
           <button
             onClick={onDownloadAll}
-            disabled={activeAlbum.photoCount === 0}
+            disabled={totalCount === 0}
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center gap-1.5 ${
-              activeAlbum.photoCount > 0
+              totalCount > 0
                 ? "bg-gradient-to-r from-[#FF693C] to-[#870069] hover:opacity-95 text-white cursor-pointer"
                 : "bg-slate-200 text-slate-400 cursor-not-allowed"
             }`}
             title="Download full album original files as a ZIP archive"
           >
             <Download className="w-4 h-4" />
-            <span>Download All ({activeAlbum.photoCount})</span>
+            <span>Download All ({totalCount})</span>
           </button>
         </div>
       </div>

@@ -194,7 +194,9 @@ export default function AlbumsPage() {
                 {/* Photo Count Badge */}
                 <div className="absolute top-3 right-3 z-10">
                   <span className="px-2.5 py-1 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-semibold border border-white/20">
-                    {album.photoCount} Photos
+                    {album.hasSubfolders
+                      ? `${album.subfolderCount} Sessions • ${album.photoCount} HD`
+                      : `${album.photoCount} Photos`}
                   </span>
                 </div>
               </div>

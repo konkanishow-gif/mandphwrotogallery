@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ALBUMS_DATA, AlbumItem, PhotoItem, EVENT_DETAILS } from "@/data/driveCatalog";
+import { ALBUMS_DATA, AlbumItem, PhotoItem, SubfolderItem, EVENT_DETAILS } from "@/data/driveCatalog";
 
 // In-memory cache for live scraped catalog
 let cachedCatalog: AlbumItem[] | null = null;
 let lastCacheTime = 0;
-const CACHE_TTL = 15 * 1000; // 15 seconds live refresh
+const CACHE_TTL = 30 * 1000; // 30 seconds live refresh
 
 function extractCleanId(sskOrStr: string): string {
   const parts = sskOrStr.split(":");
@@ -99,6 +99,7 @@ export async function GET(request: NextRequest) {
       albums: cachedCatalog,
       source: "cache",
       event: EVENT_DETAILS,
+      count: cachedCatalog.length,
       updatedAt: new Date(lastCacheTime).toISOString(),
     });
   }
@@ -107,58 +108,83 @@ export async function GET(request: NextRequest) {
     const rootHtml = await scrapeDriveFolder(EVENT_DETAILS.rootDriveFolderId);
     const driveFolders = parseFoldersFromHtml(rootHtml);
 
-    // Start with a map of baseline known albums by ID
+    // Map baseline known root albums by ID
     const albumMap = new Map<string, AlbumItem>();
     for (const album of ALBUMS_DATA) {
       albumMap.set(album.id, { ...album });
     }
 
-    // Process every folder found in root Google Drive
+    // Process every root folder found in Google Drive
     for (const driveFolder of driveFolders) {
       const existing = albumMap.get(driveFolder.id);
 
       if (!existing) {
         // Newly created folder on Google Drive!
         let subHtml = "";
-        let newPhotos: PhotoItem[] = [];
+        let directPhotos: PhotoItem[] = [];
         let subFolders: Array<{ name: string; id: string }> = [];
 
         try {
           subHtml = await scrapeDriveFolder(driveFolder.id);
-          newPhotos = parsePhotosFromHtml(subHtml);
+          directPhotos = parsePhotosFromHtml(subHtml);
           subFolders = parseFoldersFromHtml(subHtml);
         } catch {
-          newPhotos = [];
+          directPhotos = [];
           subFolders = [];
+        }
+
+        const subfolderItems: SubfolderItem[] = [];
+        const allPhotos = [...directPhotos];
+
+        // Fetch subfolder photos if any
+        for (const sf of subFolders) {
+          try {
+            const sfHtml = await scrapeDriveFolder(sf.id);
+            const sfPhotos = parsePhotosFromHtml(sfHtml);
+            allPhotos.push(...sfPhotos);
+            subfolderItems.push({
+              id: sf.id,
+              name: sf.name,
+              slug: slugify(sf.name),
+              shortTitle: sf.name.split("|")[0].trim(),
+              photoCount: sfPhotos.length,
+              coverPhoto: sfPhotos[0] || null,
+              photos: sfPhotos,
+            });
+          } catch {
+            subfolderItems.push({
+              id: sf.id,
+              name: sf.name,
+              slug: slugify(sf.name),
+              shortTitle: sf.name.split("|")[0].trim(),
+              photoCount: 0,
+              coverPhoto: null,
+              photos: [],
+            });
+          }
         }
 
         const newAlbum: AlbumItem = {
           id: driveFolder.id,
-          slug: slugify(driveFolder.name),
           name: driveFolder.name,
-          shortTitle: driveFolder.name.replace(/^\d+\s*-\s*/, ""),
+          slug: slugify(driveFolder.name),
+          shortTitle: driveFolder.name.replace(/^\d+\s*-\s*/, "").split("(")[0].trim(),
           category: "Live Updates",
           date: "Nov 2026",
           location: "Kalaangann, Mangalore",
           photographer: "Mandd Sobhann Media Cell",
           description: `Live synchronized album from Google Drive folder: ${driveFolder.name}`,
           driveFolderUrl: `https://drive.google.com/drive/folders/${driveFolder.id}`,
-          photoCount: newPhotos.length,
-          coverPhoto: newPhotos[0] || null,
-          photos: newPhotos,
+          photoCount: allPhotos.length,
+          hasSubfolders: subfolderItems.length > 0,
+          subfolderCount: subfolderItems.length,
+          subfolders: subfolderItems,
+          coverPhoto: allPhotos[0] || null,
+          photos: allPhotos,
           isDriveConnected: true,
           year: 2026,
-          hasLivePhotos: newPhotos.length > 0,
+          hasLivePhotos: allPhotos.length > 0,
         };
-
-        if (subFolders.length > 0) {
-          newAlbum.subfolders = subFolders.map((sf) => ({
-            name: sf.name,
-            id: sf.id,
-            count: 0,
-            slug: slugify(sf.name),
-          }));
-        }
 
         albumMap.set(driveFolder.id, newAlbum);
       }
@@ -177,7 +203,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Live Drive sync error:", error);
-    // Fallback safely to compiled ALBUMS_DATA
     return NextResponse.json({
       albums: ALBUMS_DATA,
       source: "fallback_static",

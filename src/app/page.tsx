@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   Camera,
@@ -27,6 +27,7 @@ import { downloadPhotosAsZip, ZipProgressState } from "@/utils/zipDownload";
 export default function HomePage() {
   const [albums, setAlbums] = useState<AlbumItem[]>(ALBUMS_DATA);
   const [activeAlbum, setActiveAlbum] = useState<AlbumItem>(ALBUMS_DATA[0]);
+  const [activeSubfolder, setActiveSubfolder] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
@@ -49,7 +50,13 @@ export default function HomePage() {
           const match = data.albums.find((a: AlbumItem) => a.id === prev.id);
           return match || data.albums[0];
         });
-        setLastSyncText(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+        setLastSyncText(
+          new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+        );
       }
     } catch (err) {
       console.log("Drive sync check:", err);
@@ -105,6 +112,15 @@ export default function HomePage() {
       ? albums
       : albums.filter((a) => a.category === selectedCategory);
 
+  // Active photos based on subfolder selection
+  const currentPhotos = useMemo(() => {
+    if (activeSubfolder === "all" || !activeAlbum.subfolders) {
+      return activeAlbum.photos;
+    }
+    const match = activeAlbum.subfolders.find((sf) => sf.slug === activeSubfolder);
+    return match && match.photos.length > 0 ? match.photos : activeAlbum.photos;
+  }, [activeAlbum, activeSubfolder]);
+
   // Multi-select toggle
   const handleToggleSelect = (photoId: string) => {
     setSelectedPhotoIds((prev) =>
@@ -115,18 +131,18 @@ export default function HomePage() {
   };
 
   const handleSelectAll = () => {
-    setSelectedPhotoIds(activeAlbum.photos.map((p) => p.id));
+    setSelectedPhotoIds(currentPhotos.map((p) => p.id));
   };
 
   const handleDeselectAll = () => {
     setSelectedPhotoIds([]);
   };
 
-  // Download all photos of active album as ZIP
+  // Download all photos of active selection as ZIP
   const handleDownloadAll = () => {
     setZipModalOpen(true);
     downloadPhotosAsZip(
-      activeAlbum.photos,
+      currentPhotos,
       `${activeAlbum.name}_Full_Album`,
       (state) => setZipState(state)
     );
@@ -134,14 +150,14 @@ export default function HomePage() {
 
   // Download selected photos as ZIP
   const handleDownloadSelected = () => {
-    const selectedPhotos = activeAlbum.photos.filter((p) =>
+    const selected = currentPhotos.filter((p) =>
       selectedPhotoIds.includes(p.id)
     );
-    if (selectedPhotos.length === 0) return;
+    if (selected.length === 0) return;
 
     setZipModalOpen(true);
     downloadPhotosAsZip(
-      selectedPhotos,
+      selected,
       `${activeAlbum.shortTitle}_Selected_Photos`,
       (state) => setZipState(state)
     );
@@ -154,12 +170,16 @@ export default function HomePage() {
   };
 
   // Visible sliced photos for infinite scroll simulation
-  const visiblePhotos = activeAlbum.photos.slice(0, loadedCount);
+  const visiblePhotos = currentPhotos.slice(0, loadedCount);
 
   // Selected photos array for SelectionBar
-  const selectedPhotos = activeAlbum.photos.filter((p) =>
+  const selectedPhotos = currentPhotos.filter((p) =>
     selectedPhotoIds.includes(p.id)
   );
+
+  const totalPhotosCount = useMemo(() => {
+    return albums.reduce((acc, curr) => acc + (curr.photoCount || 0), 0);
+  }, [albums]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
@@ -169,7 +189,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <Hero
         onOpenSearch={() => setSearchModalOpen(true)}
-        totalPhotos={albums.reduce((acc, curr) => acc + (curr.photoCount || 0), 0)}
+        totalPhotos={totalPhotosCount}
         totalAlbums={albums.length}
       />
 
@@ -194,7 +214,7 @@ export default function HomePage() {
               Convention Photo Library
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Select an album below to explore high-resolution photographs directly from Google Drive.
+              Select an official Google Drive folder below to explore photographs in master resolution.
             </p>
           </div>
 
@@ -205,14 +225,18 @@ export default function HomePage() {
               className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
               title="Force real-time scan of Google Drive"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-[#870069]" : "text-[#FF693C]"}`} />
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${
+                  isSyncing ? "animate-spin text-[#870069]" : "text-[#FF693C]"
+                }`}
+              />
               <span>{isSyncing ? "Checking Drive..." : "Sync Drive Now"}</span>
             </button>
             <Link
               href="/albums"
               className="px-4 py-2 rounded-xl text-xs font-bold bg-[#870069] hover:bg-[#6A0050] text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <span>View All Albums ({albums.length})</span>
+              <span>All {albums.length} Folders</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -224,10 +248,11 @@ export default function HomePage() {
           activeAlbum={activeAlbum}
           onSelectAlbum={(album) => {
             setActiveAlbum(album);
+            setActiveSubfolder("all");
             setLoadedCount(24);
           }}
           loadedCount={visiblePhotos.length}
-          totalCount={activeAlbum.photoCount}
+          totalCount={currentPhotos.length}
           isMultiSelectMode={isMultiSelectMode}
           onToggleMultiSelect={() => setIsMultiSelectMode(!isMultiSelectMode)}
           onDownloadAll={handleDownloadAll}
@@ -235,6 +260,11 @@ export default function HomePage() {
           onSelectCategory={setSelectedCategory}
           onRefreshLive={() => fetchLiveCatalog(true)}
           isRefreshing={isSyncing}
+          activeSubfolder={activeSubfolder}
+          onSelectSubfolder={(sub) => {
+            setActiveSubfolder(sub);
+            setLoadedCount(24);
+          }}
         />
 
         {/* Responsive Masonry / Dynamic Photo Grid */}
@@ -247,8 +277,8 @@ export default function HomePage() {
           onOpenLightbox={handleOpenLightbox}
         />
 
-        {/* Progressive Load More Button (Google Photos Style) */}
-        {loadedCount < activeAlbum.photos.length && (
+        {/* Progressive Load More Button */}
+        {loadedCount < currentPhotos.length && (
           <div className="pt-8 pb-4 flex flex-col items-center gap-2">
             <button
               onClick={() => setLoadedCount((prev) => prev + 24)}
@@ -256,21 +286,21 @@ export default function HomePage() {
             >
               <Camera className="w-4 h-4 text-[#870069]" />
               <span>
-                Load More Photographs ({activeAlbum.photos.length - loadedCount} remaining)
+                Load More Photographs ({currentPhotos.length - loadedCount} remaining)
               </span>
             </button>
             <span className="text-[11px] text-slate-400">
-              Showing {loadedCount} of {activeAlbum.photos.length} in this album
+              Showing {loadedCount} of {currentPhotos.length} in this session
             </span>
           </div>
         )}
       </main>
 
-      {/* Floating Selection Bar for Multi-Select Download & WhatsApp */}
+      {/* Floating Selection Bar */}
       <SelectionBar
         selectedPhotos={selectedPhotos}
         album={activeAlbum}
-        totalAlbumPhotos={activeAlbum.photos.length}
+        totalAlbumPhotos={currentPhotos.length}
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
         onDownloadZip={handleDownloadSelected}
@@ -283,7 +313,7 @@ export default function HomePage() {
       {/* Full-Screen Lightbox Modal */}
       <LightboxModal
         isOpen={lightboxOpen}
-        photos={activeAlbum.photos}
+        photos={currentPhotos}
         initialIndex={lightboxIndex}
         album={activeAlbum}
         onClose={() => setLightboxOpen(false)}
