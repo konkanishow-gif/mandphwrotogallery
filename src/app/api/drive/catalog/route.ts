@@ -1,10 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ALBUMS_DATA, AlbumItem, PhotoItem, EVENT_DETAILS } from "@/data/driveCatalog";
 
 // In-memory cache for live scraped catalog
 let cachedCatalog: AlbumItem[] | null = null;
 let lastCacheTime = 0;
-const CACHE_TTL = 60 * 1000; // 1 minute live refresh
+const CACHE_TTL = 15 * 1000; // 15 seconds live refresh
+
+function extractCleanId(sskOrStr: string): string {
+  const parts = sskOrStr.split(":");
+  const last = parts[parts.length - 1];
+  return last.replace(/-\d+-\d+$/, "");
+}
 
 function slugify(text: string): string {
   return text
@@ -22,7 +28,7 @@ async function scrapeDriveFolder(folderId: string): Promise<string> {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     },
-    next: { revalidate: 60 },
+    cache: "no-store",
   });
   if (!response.ok) {
     throw new Error(`Failed to fetch Drive folder ${folderId}: ${response.status}`);
@@ -31,22 +37,23 @@ async function scrapeDriveFolder(folderId: string): Promise<string> {
 }
 
 function parseFoldersFromHtml(html: string): Array<{ name: string; id: string }> {
-  const folderRegex = /aria-label="([^"]+)\s+Shared folder"[^>]*ssk=['"][^'"]*?:([A-Za-z0-9_-]{20,})/g;
+  const folderRegex =
+    /aria-label="([^"]+)\s+Shared folder"[^>]*ssk=['"]([^'"]+)/g;
   const folders: Array<{ name: string; id: string }> = [];
   const seenIds = new Set<string>();
 
   let match;
   while ((match = folderRegex.exec(html)) !== null) {
     const rawName = match[1];
-    const rawId = match[2];
+    const rawSsk = match[2];
     const cleanName = rawName
       .replace(/&amp;/g, "&")
       .replace(/&#39;/g, "'")
       .replace(/&quot;/g, '"')
       .trim();
-    const cleanId = rawId.split("-")[0];
+    const cleanId = extractCleanId(rawSsk);
 
-    if (!seenIds.has(cleanId)) {
+    if (cleanId && !seenIds.has(cleanId)) {
       seenIds.add(cleanId);
       folders.push({ name: cleanName, id: cleanId });
     }
@@ -55,17 +62,18 @@ function parseFoldersFromHtml(html: string): Array<{ name: string; id: string }>
 }
 
 function parsePhotosFromHtml(html: string): PhotoItem[] {
-  const photoRegex = /aria-label="([^"]+\.(?:JPG|jpg|PNG|png|JPEG|jpeg))\s+Image\s+Shared"[^>]*ssk=['"][^'"]*?:([A-Za-z0-9_-]{20,})/g;
+  const photoRegex =
+    /aria-label="([^"]+\.(?:JPG|jpg|PNG|png|JPEG|jpeg|WEBP|webp))\s+Image\s+Shared"[^>]*ssk=['"]([^'"]+)/g;
   const photos: PhotoItem[] = [];
   const seenIds = new Set<string>();
 
   let match;
   while ((match = photoRegex.exec(html)) !== null) {
     const rawName = match[1];
-    const rawId = match[2];
-    const cleanId = rawId.split("-")[0];
+    const rawSsk = match[2];
+    const cleanId = extractCleanId(rawSsk);
 
-    if (!seenIds.has(cleanId)) {
+    if (cleanId && !seenIds.has(cleanId)) {
       seenIds.add(cleanId);
       photos.push({
         id: cleanId,
@@ -81,13 +89,17 @@ function parsePhotosFromHtml(html: string): PhotoItem[] {
   return photos;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const forceRefresh = searchParams.get("refresh") === "true" || searchParams.get("refresh") === "1";
+
   const now = Date.now();
-  if (cachedCatalog && now - lastCacheTime < CACHE_TTL) {
+  if (!forceRefresh && cachedCatalog && now - lastCacheTime < CACHE_TTL) {
     return NextResponse.json({
       albums: cachedCatalog,
       source: "cache",
       event: EVENT_DETAILS,
+      updatedAt: new Date(lastCacheTime).toISOString(),
     });
   }
 
@@ -95,28 +107,29 @@ export async function GET() {
     const rootHtml = await scrapeDriveFolder(EVENT_DETAILS.rootDriveFolderId);
     const driveFolders = parseFoldersFromHtml(rootHtml);
 
-    // Merge with known curated albums
-    const liveCatalog: AlbumItem[] = [];
-
-    // First process existing albums in ALBUMS_DATA
-    for (const existingAlbum of ALBUMS_DATA) {
-      liveCatalog.push(existingAlbum);
+    // Start with a map of baseline known albums by ID
+    const albumMap = new Map<string, AlbumItem>();
+    for (const album of ALBUMS_DATA) {
+      albumMap.set(album.id, { ...album });
     }
 
-    // Now check if any new folders were created on Google Drive that aren't yet in ALBUMS_DATA
+    // Process every folder found in root Google Drive
     for (const driveFolder of driveFolders) {
-      const alreadyExists = liveCatalog.some(
-        (a) => a.id === driveFolder.id || a.name.toLowerCase() === driveFolder.name.toLowerCase()
-      );
+      const existing = albumMap.get(driveFolder.id);
 
-      if (!alreadyExists) {
-        // Automatically fetch newly created folder's photos
+      if (!existing) {
+        // Newly created folder on Google Drive!
+        let subHtml = "";
         let newPhotos: PhotoItem[] = [];
+        let subFolders: Array<{ name: string; id: string }> = [];
+
         try {
-          const subHtml = await scrapeDriveFolder(driveFolder.id);
+          subHtml = await scrapeDriveFolder(driveFolder.id);
           newPhotos = parsePhotosFromHtml(subHtml);
+          subFolders = parseFoldersFromHtml(subHtml);
         } catch {
           newPhotos = [];
+          subFolders = [];
         }
 
         const newAlbum: AlbumItem = {
@@ -138,10 +151,20 @@ export async function GET() {
           hasLivePhotos: newPhotos.length > 0,
         };
 
-        liveCatalog.push(newAlbum);
+        if (subFolders.length > 0) {
+          newAlbum.subfolders = subFolders.map((sf) => ({
+            name: sf.name,
+            id: sf.id,
+            count: 0,
+            slug: slugify(sf.name),
+          }));
+        }
+
+        albumMap.set(driveFolder.id, newAlbum);
       }
     }
 
+    const liveCatalog = Array.from(albumMap.values());
     cachedCatalog = liveCatalog;
     lastCacheTime = now;
 
@@ -150,6 +173,7 @@ export async function GET() {
       source: "live_drive",
       event: EVENT_DETAILS,
       count: liveCatalog.length,
+      updatedAt: new Date().toISOString(),
     });
   } catch (error) {
     console.error("Live Drive sync error:", error);
@@ -159,6 +183,7 @@ export async function GET() {
       source: "fallback_static",
       event: EVENT_DETAILS,
       error: String(error),
+      updatedAt: new Date().toISOString(),
     });
   }
 }

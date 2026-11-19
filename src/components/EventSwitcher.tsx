@@ -1,14 +1,14 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Download,
   Share2,
   CheckSquare,
   Square,
   Sparkles,
-  Clock,
   Camera,
+  RefreshCw,
 } from "lucide-react";
 import { AlbumItem } from "@/data/driveCatalog";
 import { shareAlbumOnWhatsApp } from "@/utils/whatsapp";
@@ -24,6 +24,8 @@ interface EventSwitcherProps {
   onDownloadAll: () => void;
   selectedCategory: string;
   onSelectCategory: (cat: string) => void;
+  onRefreshLive?: () => void;
+  isRefreshing?: boolean;
 }
 
 export default function EventSwitcher({
@@ -37,47 +39,65 @@ export default function EventSwitcher({
   onDownloadAll,
   selectedCategory,
   onSelectCategory,
+  onRefreshLive,
+  isRefreshing = false,
 }: EventSwitcherProps) {
-  const percentLoaded =
-    totalCount > 0 ? Math.min(100, Math.round((loadedCount / totalCount) * 100)) : 0;
-
-  const categories = [
-    "All",
-    "Ceremonies",
-    "VVIP Visits",
-    "Exhibition",
-    "Performances",
-    "Culinary",
-    "Ambience",
-    "World Record",
-  ];
+  // Dynamically compute unique categories from albums
+  const dynamicCategories = useMemo(() => {
+    const cats = new Set<string>();
+    cats.add("All");
+    albums.forEach((a) => {
+      if (a.category) {
+        cats.add(a.category);
+      }
+    });
+    return Array.from(cats);
+  }, [albums]);
 
   return (
     <div className="space-y-6">
-      {/* Category Filter Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap pl-1">
-          Filter:
-        </span>
-        {categories.map((cat) => {
-          const isSelected = selectedCategory === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => onSelectCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                isSelected
-                  ? "bg-gradient-to-r from-[#870069] to-[#FF693C] text-white shadow-xs"
-                  : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+      {/* Category Filter Chips & Live Sync Button */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-grow">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap pl-1">
+            Filter:
+          </span>
+          {dynamicCategories.map((cat) => {
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => onSelectCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  isSelected
+                    ? "bg-gradient-to-r from-[#870069] to-[#FF693C] text-white shadow-xs"
+                    : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
+        {onRefreshLive && (
+          <button
+            onClick={onRefreshLive}
+            disabled={isRefreshing}
+            className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+            title="Scan Google Drive for newly added folders or photos"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${
+                isRefreshing ? "animate-spin text-[#870069]" : "text-[#FF693C]"
               }`}
-            >
-              {cat}
-            </button>
-          );
-        })}
+            />
+            <span>{isRefreshing ? "Checking Drive..." : "Sync Drive Live"}</span>
+          </button>
+        )}
       </div>
 
-      {/* Featured Album Switcher Horizontal Scroll / Grid Pills */}
+      {/* Featured Album Switcher Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {albums.map((album) => {
           const isActive = album.id === activeAlbum.id;
@@ -122,7 +142,7 @@ export default function EventSwitcher({
                       : "bg-amber-100 text-amber-800"
                   }`}
                 >
-                  {hasPhotos ? `${album.photoCount} HD` : "Scheduled"}
+                  {hasPhotos ? `${album.photoCount} HD` : "Live Folder"}
                 </span>
               </div>
             </button>
@@ -130,7 +150,7 @@ export default function EventSwitcher({
         })}
       </div>
 
-      {/* Active Session Info Bar & Photographer Attribution (Sumadhur Style) */}
+      {/* Active Session Info Bar */}
       <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         {/* Left: Active Album Title, Date, Venue */}
         <div className="space-y-1">
@@ -147,11 +167,14 @@ export default function EventSwitcher({
             {activeAlbum.name}
           </h3>
 
-          {/* Dual Photographer Attribution Bar */}
           <div className="pt-1 flex items-center gap-2 text-xs text-slate-500 flex-wrap">
             <span className="font-semibold text-slate-700">Official Coverage:</span>
             <span className="text-[#870069] font-medium bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200/60">
               {activeAlbum.photographer}
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="text-slate-500 font-mono text-[11px]">
+              {activeAlbum.photoCount} High-Resolution Photographs
             </span>
           </div>
         </div>
@@ -199,36 +222,13 @@ export default function EventSwitcher({
                 ? "bg-gradient-to-r from-[#FF693C] to-[#870069] hover:opacity-95 text-white cursor-pointer"
                 : "bg-slate-200 text-slate-400 cursor-not-allowed"
             }`}
-            title={
-              activeAlbum.photoCount > 0
-                ? `Download all ${activeAlbum.photoCount} photos as ZIP`
-                : "No photos to download"
-            }
+            title="Download full album original files as a ZIP archive"
           >
             <Download className="w-4 h-4" />
-            <span>Download All ZIP ({activeAlbum.photoCount})</span>
+            <span>Download All ({activeAlbum.photoCount})</span>
           </button>
         </div>
       </div>
-
-      {/* Progress Bar (Sumadhur Style: Showing loaded photos vs total album count) */}
-      {totalCount > 0 && (
-        <div className="space-y-1.5 px-1">
-          <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>
-              Showing <strong>{Math.min(loadedCount, totalCount)}</strong> of{" "}
-              <strong>{totalCount}</strong> HD photographs from this session
-            </span>
-            <span className="font-bold text-[#870069]">{percentLoaded}% loaded</span>
-          </div>
-          <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[#870069] to-[#FF693C] transition-all duration-300 rounded-full"
-              style={{ width: `${percentLoaded}%` }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

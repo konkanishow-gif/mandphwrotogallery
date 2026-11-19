@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import {
   Layers,
@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Search,
   Share2,
+  RefreshCw,
 } from "lucide-react";
 import { ALBUMS_DATA, EVENT_DETAILS, AlbumItem, PhotoItem } from "@/data/driveCatalog";
 import Navbar from "@/components/Navbar";
@@ -26,29 +27,52 @@ export default function AlbumsPage() {
   const [activeLightboxAlbum, setActiveLightboxAlbum] = useState<AlbumItem>(ALBUMS_DATA[0]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncText, setLastSyncText] = useState("Just now");
 
-  // Live Google Drive automatic folder sync
-  useEffect(() => {
-    fetch("/api/drive/catalog")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.albums && Array.isArray(data.albums) && data.albums.length > 0) {
-          setAlbums(data.albums);
-        }
-      })
-      .catch((err) => console.log("Using compiled catalog:", err));
+  // Function to refresh catalog from Google Drive
+  const fetchLiveCatalog = useCallback(async (force = false) => {
+    try {
+      if (force) setIsSyncing(true);
+      const res = await fetch(`/api/drive/catalog${force ? "?refresh=1" : ""}`);
+      const data = await res.json();
+      if (data?.albums && Array.isArray(data.albums) && data.albums.length > 0) {
+        setAlbums(data.albums);
+        setLastSyncText(
+          new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+        );
+      }
+    } catch (err) {
+      console.log("Drive sync check:", err);
+    } finally {
+      if (force) setIsSyncing(false);
+    }
   }, []);
 
-  const categories = [
-    "All",
-    "Ceremonies",
-    "VVIP Visits",
-    "Exhibition",
-    "Performances",
-    "Culinary",
-    "Ambience",
-    "World Record",
-  ];
+  // Check on mount and periodically in background
+  useEffect(() => {
+    fetchLiveCatalog(false);
+    const interval = setInterval(() => {
+      fetchLiveCatalog(false);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [fetchLiveCatalog]);
+
+  // Dynamically compute unique categories from albums
+  const dynamicCategories = useMemo(() => {
+    const cats = new Set<string>();
+    cats.add("All");
+    albums.forEach((a) => {
+      if (a.category) {
+        cats.add(a.category);
+      }
+    });
+    return Array.from(cats);
+  }, [albums]);
 
   const filtered = albums.filter((a) => {
     const matchesCat =
@@ -86,20 +110,36 @@ export default function AlbumsPage() {
               All folders and newly added media automatically synchronize live.
             </p>
           </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => fetchLiveCatalog(true)}
+              disabled={isSyncing}
+              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 shadow-2xs transition-all flex items-center gap-2 cursor-pointer"
+              title="Force real-time scan of Google Drive"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${
+                  isSyncing ? "animate-spin text-[#870069]" : "text-[#FF693C]"
+                }`}
+              />
+              <span>{isSyncing ? "Checking Drive..." : "Sync Drive Live"}</span>
+            </button>
+          </div>
         </div>
 
         {/* Filter Toolbar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
           {/* Category Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {categories.map((cat) => (
+            {dynamicCategories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   selectedCategory === cat
                     ? "bg-gradient-to-r from-[#870069] to-[#FF693C] text-white shadow-xs"
-                    : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 {cat}
@@ -107,15 +147,15 @@ export default function AlbumsPage() {
             ))}
           </div>
 
-          {/* Search within albums */}
-          <div className="relative min-w-[240px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+          {/* Search Input */}
+          <div className="relative min-w-[260px]">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
+              placeholder="Filter by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search albums by name..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 border border-slate-200 outline-none focus:border-[#870069]"
+              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:border-[#870069] focus:bg-white text-slate-800"
             />
           </div>
         </div>
@@ -125,106 +165,111 @@ export default function AlbumsPage() {
           {filtered.map((album) => (
             <div
               key={album.id}
-              className="group rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-2xs hover:shadow-xl hover:border-slate-300 transition-all duration-300 flex flex-col justify-between"
+              className="group rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xs hover:shadow-xl hover:border-[#870069]/40 transition-all duration-300 flex flex-col"
             >
-              <div>
-                {/* Cover Image Container */}
-                <Link
-                  href={`/album/${album.slug}`}
-                  className="block aspect-[16/10] bg-slate-950 overflow-hidden relative cursor-pointer"
-                >
-                  {album.coverPhoto ? (
-                    <img
-                      src={album.coverPhoto.thumbUrl}
-                      alt={album.name}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-500">
-                      <Camera className="w-8 h-8 opacity-40 text-amber-300" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-90" />
-
-                  {/* Top Category Badge */}
-                  <div className="absolute top-3.5 left-3.5">
-                    <span className="px-2.5 py-1 rounded-full bg-[#870069] text-white text-[10px] font-bold uppercase tracking-wider shadow-xs">
-                      {album.category}
-                    </span>
+              {/* Cover Image Container */}
+              <div className="relative w-full aspect-[16/10] bg-slate-900 overflow-hidden">
+                {album.coverPhoto ? (
+                  <img
+                    src={album.coverPhoto.previewUrl}
+                    alt={album.name}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-slate-500 p-6 text-center">
+                    <Camera className="w-8 h-8 mb-2 opacity-50" />
+                    <span className="text-xs font-semibold">Live Google Drive Folder</span>
+                    <span className="text-[10px] text-slate-400 mt-1">Photos rendering live</span>
                   </div>
+                )}
 
-                  {/* Photo count pill */}
-                  <div className="absolute top-3.5 right-3.5">
-                    <span className="px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-md text-[10px] font-bold text-amber-300 uppercase tracking-wider border border-white/20">
-                      {album.photoCount > 0 ? `${album.photoCount} HD Photos` : "Awaiting Media"}
-                    </span>
-                  </div>
+                {/* Category Badge */}
+                <div className="absolute top-3 left-3 z-10">
+                  <span className="px-3 py-1 rounded-full bg-[#870069] text-white text-[11px] font-bold uppercase tracking-wider shadow-sm">
+                    {album.category}
+                  </span>
+                </div>
 
-                  {/* Bottom title & date */}
-                  <div className="absolute bottom-3.5 left-3.5 right-3.5 text-white">
-                    <span className="text-[11px] font-medium text-amber-200 block">
-                      {album.date}
-                    </span>
-                    <h3 className="text-base sm:text-lg font-bold text-white truncate drop-shadow-xs">
-                      {album.name}
-                    </h3>
-                  </div>
-                </Link>
-
-                {/* Body Details */}
-                <div className="p-5 space-y-3">
-                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                    {album.description}
-                  </p>
-
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                    <span className="flex items-center gap-1 truncate max-w-[180px]">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate">{album.location}</span>
-                    </span>
-                    <span className="flex items-center gap-1 text-[#870069] font-semibold">
-                      <Camera className="w-3.5 h-3.5 text-[#FF693C]" />
-                      <span>Original HD</span>
-                    </span>
-                  </div>
+                {/* Photo Count Badge */}
+                <div className="absolute top-3 right-3 z-10">
+                  <span className="px-2.5 py-1 rounded-full bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-semibold border border-white/20">
+                    {album.photoCount} Photos
+                  </span>
                 </div>
               </div>
 
-              {/* Bottom Card Actions */}
-              <div className="p-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-2">
-                <button
-                  onClick={() => shareAlbumOnWhatsApp(album)}
-                  className="p-2 rounded-xl text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
-                  title="Share on WhatsApp"
-                >
-                  <Share2 className="w-4 h-4" />
-                </button>
+              {/* Album Info */}
+              <div className="p-6 flex-grow flex flex-col justify-between space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#870069] transition-colors leading-snug">
+                    {album.name}
+                  </h3>
 
-                <Link
-                  href={`/album/${album.slug}`}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center gap-1.5"
-                >
-                  <span>Open Album</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                    {album.description}
+                  </p>
+                </div>
+
+                {/* Meta details */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#FF693C]" />
+                    <span>{album.date}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#FF693C]" />
+                    <span className="truncate max-w-[140px]">{album.location}</span>
+                  </div>
+                </div>
+
+                {/* Actions: View Album & WhatsApp */}
+                <div className="pt-2 flex items-center gap-2">
+                  <Link
+                    href={`/album/${album.slug}`}
+                    className="flex-grow py-2.5 px-4 rounded-xl text-center text-xs font-bold bg-[#870069] hover:bg-[#6A0050] text-white transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                  >
+                    <span>View Album</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  <button
+                    onClick={() => shareAlbumOnWhatsApp(album)}
+                    className="p-2.5 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-600 text-slate-600 transition-colors cursor-pointer"
+                    title="Share album on WhatsApp"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
+
+        {filtered.length === 0 && (
+          <div className="py-20 text-center space-y-4 bg-white rounded-3xl border border-dashed border-slate-200">
+            <Layers className="w-12 h-12 text-slate-300 mx-auto" />
+            <h3 className="text-base font-bold text-slate-700">No albums matched</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              Try adjusting your category filter or search query.
+            </p>
+          </div>
+        )}
       </main>
 
-      <SearchModal
-        isOpen={searchModalOpen}
-        onClose={() => setSearchModalOpen(false)}
-      />
-
+      {/* Lightbox Modal */}
       <LightboxModal
         isOpen={lightboxOpen}
         photos={activeLightboxAlbum.photos}
         initialIndex={lightboxIndex}
         album={activeLightboxAlbum}
         onClose={() => setLightboxOpen(false)}
+      />
+
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={searchModalOpen}
+        onClose={() => setSearchModalOpen(false)}
       />
 
       <Footer />

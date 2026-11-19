@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Camera,
@@ -10,6 +10,7 @@ import {
   Grid,
   ArrowRight,
   CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 import { ALBUMS_DATA, AlbumItem, PhotoItem, EVENT_DETAILS } from "@/data/driveCatalog";
 import Navbar from "@/components/Navbar";
@@ -33,25 +34,59 @@ export default function HomePage() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [loadedCount, setLoadedCount] = useState(24);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncText, setLastSyncText] = useState("Just now");
 
-  // Live Google Drive automatic folder sync (No redeployment needed)
+  // Function to refresh catalog from Google Drive
+  const fetchLiveCatalog = useCallback(async (force = false) => {
+    try {
+      if (force) setIsSyncing(true);
+      const res = await fetch(`/api/drive/catalog${force ? "?refresh=1" : ""}`);
+      const data = await res.json();
+      if (data?.albums && Array.isArray(data.albums) && data.albums.length > 0) {
+        setAlbums(data.albums);
+        setActiveAlbum((prev) => {
+          const match = data.albums.find((a: AlbumItem) => a.id === prev.id);
+          return match || data.albums[0];
+        });
+        setLastSyncText(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+      }
+    } catch (err) {
+      console.log("Drive sync check:", err);
+    } finally {
+      if (force) setIsSyncing(false);
+    }
+  }, []);
+
+  // Check on mount and periodically in background every 30 seconds
   useEffect(() => {
-    fetch("/api/drive/catalog")
+    fetchLiveCatalog(false);
+    const interval = setInterval(() => {
+      fetchLiveCatalog(false);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [fetchLiveCatalog]);
+
+  // When active album changes, also fetch live photos for this specific folder
+  useEffect(() => {
+    if (!activeAlbum?.id) return;
+    fetch(`/api/drive/folder?id=${activeAlbum.id}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data?.albums && Array.isArray(data.albums) && data.albums.length > 0) {
-          setAlbums(data.albums);
-          const currentInLive = data.albums.find(
-            (a: AlbumItem) => a.id === activeAlbum.id
-          );
-          if (currentInLive) {
-            setActiveAlbum(currentInLive);
-          }
+        if (data?.photos && Array.isArray(data.photos) && data.photos.length > 0) {
+          setActiveAlbum((prev) => {
+            if (prev.id !== activeAlbum.id) return prev;
+            return {
+              ...prev,
+              photos: data.photos,
+              photoCount: data.photoCount || data.photos.length,
+              coverPhoto: data.photos[0] || prev.coverPhoto,
+              hasLivePhotos: true,
+            };
+          });
         }
       })
-      .catch((err) => {
-        console.log("Using compiled catalog:", err);
-      });
+      .catch(() => {});
   }, [activeAlbum.id]);
 
   // ZIP Download progress state
@@ -98,7 +133,7 @@ export default function HomePage() {
   };
 
   // Download selected photos as ZIP
-  const handleDownloadSelectedZip = () => {
+  const handleDownloadSelected = () => {
     const selectedPhotos = activeAlbum.photos.filter((p) =>
       selectedPhotoIds.includes(p.id)
     );
@@ -112,212 +147,136 @@ export default function HomePage() {
     );
   };
 
+  // Open Lightbox on click
+  const handleOpenLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  // Visible sliced photos for infinite scroll simulation
+  const visiblePhotos = activeAlbum.photos.slice(0, loadedCount);
+
+  // Selected photos array for SelectionBar
   const selectedPhotos = activeAlbum.photos.filter((p) =>
     selectedPhotoIds.includes(p.id)
   );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
-      {/* Navbar with brand logos */}
+      {/* Primary Sticky Header */}
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
       {/* Hero Section */}
-      <Hero
-        onOpenSearch={() => setSearchModalOpen(true)}
-        onSearchQuery={(q) => {
-          const found = albums.find(
-            (a) =>
-              a.name.toLowerCase().includes(q.toLowerCase()) ||
-              a.category.toLowerCase().includes(q.toLowerCase())
-          );
-          if (found) {
-            setActiveAlbum(found);
-            const el = document.getElementById("gallery-section");
-            el?.scrollIntoView({ behavior: "smooth" });
-          } else {
-            setSearchModalOpen(true);
-          }
-        }}
-      />
+      <Hero onOpenSearch={() => setSearchModalOpen(true)} />
 
-      {/* Main Interactive Photo Gallery Section */}
+      {/* Main Interactive Photo Gallery Container */}
       <main
         id="gallery-section"
-        className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-10"
+        className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8"
       >
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-3 border-b border-slate-200">
+        {/* Section Header with Live Google Drive Status & Manual Refresh */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-slate-200">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#870069] mb-1">
-              <Camera className="w-3.5 h-3.5" />
-              <span>Official Convention Photo Library</span>
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Google Drive Synchronized
+              </span>
+              <span className="text-xs text-slate-400">
+                Synced: {lastSyncText}
+              </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              1st World Konkani Music Mega Convention (Active)
+              Convention Photo Library
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl">
-              Authentic high-resolution photographs from Google Drive. Explore albums,
-              download original images, or share directly on WhatsApp.
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Select an album below to explore high-resolution photographs directly from Google Drive.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => fetchLiveCatalog(true)}
+              disabled={isSyncing}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Force real-time scan of Google Drive"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-[#870069]" : "text-[#FF693C]"}`} />
+              <span>{isSyncing ? "Checking Drive..." : "Sync Drive Now"}</span>
+            </button>
             <Link
               href="/albums"
-              className="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-2xs hover:shadow-xs transition-all flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-[#870069] hover:bg-[#6A0050] text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <span>View All Albums</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#870069]" />
+              <span>View All Albums ({albums.length})</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
 
-        {/* Event Switcher Pills, Progress, and Photographer Credit Bar */}
+        {/* Dynamic Event / Session Switcher */}
         <EventSwitcher
           albums={filteredAlbums}
           activeAlbum={activeAlbum}
           onSelectAlbum={(album) => {
             setActiveAlbum(album);
-            setSelectedPhotoIds([]);
+            setLoadedCount(24);
           }}
-          loadedCount={loadedCount}
+          loadedCount={visiblePhotos.length}
           totalCount={activeAlbum.photoCount}
           isMultiSelectMode={isMultiSelectMode}
           onToggleMultiSelect={() => setIsMultiSelectMode(!isMultiSelectMode)}
           onDownloadAll={handleDownloadAll}
           selectedCategory={selectedCategory}
-          onSelectCategory={(cat) => setSelectedCategory(cat)}
+          onSelectCategory={setSelectedCategory}
+          onRefreshLive={() => fetchLiveCatalog(true)}
+          isRefreshing={isSyncing}
         />
 
-        {/* The Advanced Masonry Photo Grid */}
+        {/* Responsive Masonry / Dynamic Photo Grid */}
         <PhotoGrid
-          photos={activeAlbum.photos}
+          photos={visiblePhotos}
           album={activeAlbum}
-          isMultiSelectMode={isMultiSelectMode}
           selectedPhotoIds={selectedPhotoIds}
+          isMultiSelectMode={isMultiSelectMode}
           onToggleSelect={handleToggleSelect}
-          onOpenLightbox={(idx) => {
-            setLightboxIndex(idx);
-            setLightboxOpen(true);
-          }}
-          onLoadedCountChange={(count) => setLoadedCount(count)}
+          onOpenLightbox={handleOpenLightbox}
         />
 
-        {/* Featured Albums Showcase */}
-        <section className="pt-10 border-t border-slate-200 space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#870069]">
-                Curated Collections
-              </span>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                Featured Convention Albums
-              </h3>
-            </div>
-            <Link
-              href="/albums"
-              className="text-xs sm:text-sm font-bold text-[#870069] hover:text-[#FF693C] hover:underline flex items-center gap-1"
+        {/* Progressive Load More Button (Google Photos Style) */}
+        {loadedCount < activeAlbum.photos.length && (
+          <div className="pt-8 pb-4 flex flex-col items-center gap-2">
+            <button
+              onClick={() => setLoadedCount((prev) => prev + 24)}
+              className="px-8 py-3.5 rounded-full text-xs sm:text-sm font-bold bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center gap-2 hover:border-[#870069]/40"
             >
-              <span>Browse All</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+              <Camera className="w-4 h-4 text-[#870069]" />
+              <span>
+                Load More Photographs ({activeAlbum.photos.length - loadedCount} remaining)
+              </span>
+            </button>
+            <span className="text-[11px] text-slate-400">
+              Showing {loadedCount} of {activeAlbum.photos.length} in this album
+            </span>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {albums.slice(0, 3).map((album) => (
-              <div
-                key={album.id}
-                onClick={() => {
-                  setActiveAlbum(album);
-                  setSelectedPhotoIds([]);
-                  const el = document.getElementById("gallery-section");
-                  el?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="group relative rounded-3xl overflow-hidden bg-white border border-slate-200/90 shadow-xs hover:shadow-xl transition-all cursor-pointer flex flex-col"
-              >
-                <div className="relative aspect-[16/10] bg-slate-950 overflow-hidden">
-                  {album.coverPhoto ? (
-                    <img
-                      src={album.coverPhoto.thumbUrl}
-                      alt={album.name}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-900 text-slate-500">
-                      <Camera className="w-8 h-8 opacity-40 text-amber-300" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
-                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#870069] text-white text-[10px] font-bold uppercase tracking-wider">
-                    {album.category}
-                  </span>
-                  <span className="absolute bottom-3 left-3 text-white text-xs font-semibold">
-                    {album.photoCount > 0 ? `${album.photoCount} Photos` : "Awaiting Media"}
-                  </span>
-                </div>
-
-                <div className="p-4 sm:p-5 flex-grow flex flex-col justify-between space-y-2">
-                  <div>
-                    <h4 className="font-bold text-slate-900 text-base group-hover:text-[#870069] transition-colors">
-                      {album.name}
-                    </h4>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                      {album.description}
-                    </p>
-                  </div>
-
-                  <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-xs">
-                    <span className="text-slate-400 font-medium">{album.date}</span>
-                    <span className="text-[#870069] font-bold group-hover:text-[#FF693C] flex items-center gap-1">
-                      <span>Explore</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Convention Heritage Banner */}
-        <section className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-purple-50 via-slate-50 to-orange-50 border border-purple-100/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-center md:text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-100 text-[#870069] text-xs font-bold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Mandd Sobhann Cultural Heritage</span>
-            </div>
-            <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              1st World Konkani Music Mega Convention
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
-              3 to 15 November 2026 • Kalaangann, Mangalore. Celebrating the rich legacy,
-              global artists, and historic Guinness World Record musical performances.
-            </p>
-          </div>
-
-          <Link
-            href="/albums"
-            className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
-          >
-            <span>Explore All Event Albums</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </section>
+        )}
       </main>
 
-      {/* Floating Selection Action Bar */}
+      {/* Floating Selection Bar for Multi-Select Download & WhatsApp */}
       <SelectionBar
         selectedPhotos={selectedPhotos}
         album={activeAlbum}
-        totalAlbumPhotos={activeAlbum.photoCount}
+        totalAlbumPhotos={activeAlbum.photos.length}
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
-        onDownloadZip={handleDownloadSelectedZip}
-        onClear={() => setSelectedPhotoIds([])}
+        onDownloadZip={handleDownloadSelected}
+        onClear={() => {
+          setIsMultiSelectMode(false);
+          setSelectedPhotoIds([]);
+        }}
       />
 
-      {/* Fullscreen Lightbox Modal */}
+      {/* Full-Screen Lightbox Modal */}
       <LightboxModal
         isOpen={lightboxOpen}
         photos={activeAlbum.photos}
@@ -333,19 +292,13 @@ export default function HomePage() {
         onClose={() => setZipModalOpen(false)}
       />
 
-      {/* Quick Search Modal */}
+      {/* Search Modal */}
       <SearchModal
         isOpen={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
-        onSelectAlbum={(album) => {
-          setActiveAlbum(album);
-          setSelectedPhotoIds([]);
-          const el = document.getElementById("gallery-section");
-          el?.scrollIntoView({ behavior: "smooth" });
-        }}
       />
 
-      {/* Footer with Mandd Sobhann & Techharmonix */}
+      {/* Footer */}
       <Footer />
     </div>
   );

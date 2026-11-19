@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, notFound } from "next/navigation";
 import {
@@ -14,6 +14,8 @@ import {
   CheckSquare,
   Square,
   User,
+  RefreshCw,
+  FolderOpen,
 } from "lucide-react";
 import { ALBUMS_DATA, AlbumItem, PhotoItem } from "@/data/driveCatalog";
 import Navbar from "@/components/Navbar";
@@ -31,26 +33,77 @@ export default function AlbumDetailPage() {
   const slug = params?.slug as string;
 
   const [albums, setAlbums] = useState<AlbumItem[]>(ALBUMS_DATA);
+  const [currentAlbum, setCurrentAlbum] = useState<AlbumItem | null>(() => {
+    return ALBUMS_DATA.find((a) => a.slug === slug) || null;
+  });
+  const [selectedSubfolder, setSelectedSubfolder] = useState<string>("All");
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState(true);
+  const [isRefreshingFolder, setIsRefreshingFolder] = useState(false);
   const [sortOption, setSortOption] = useState<"default" | "az" | "za">("default");
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<string[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [lastSyncText, setLastSyncText] = useState("Just now");
 
-  // Live Drive sync
+  // Fetch live catalog to find newly created folders
   useEffect(() => {
+    setIsLoadingCatalog(true);
     fetch("/api/drive/catalog")
       .then((res) => res.json())
       .then((data) => {
-        if (data?.albums && Array.isArray(data.albums) && data.albums.length > 0) {
+        if (data?.albums && Array.isArray(data.albums)) {
           setAlbums(data.albums);
+          const found = data.albums.find((a: AlbumItem) => a.slug === slug);
+          if (found) {
+            setCurrentAlbum(found);
+          }
         }
       })
-      .catch((err) => console.log("Using static albums:", err));
-  }, []);
+      .catch((err) => console.log("Catalog fetch error:", err))
+      .finally(() => setIsLoadingCatalog(false));
+  }, [slug]);
 
-  const album = albums.find((a) => a.slug === slug);
+  // Fetch on-demand live photos for this specific folder from Google Drive
+  const refreshLivePhotos = useCallback(async () => {
+    if (!currentAlbum?.id) return;
+    setIsRefreshingFolder(true);
+    try {
+      const res = await fetch(`/api/drive/folder?id=${currentAlbum.id}`);
+      const data = await res.json();
+      if (data?.photos && Array.isArray(data.photos) && data.photos.length > 0) {
+        setCurrentAlbum((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            photos: data.photos,
+            photoCount: data.photoCount || data.photos.length,
+            coverPhoto: data.photos[0] || prev.coverPhoto,
+            hasLivePhotos: true,
+          };
+        });
+        setLastSyncText(
+          new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })
+        );
+      }
+    } catch (err) {
+      console.log("Live folder refresh error:", err);
+    } finally {
+      setIsRefreshingFolder(false);
+    }
+  }, [currentAlbum?.id]);
+
+  // Trigger live photo check when currentAlbum is ready
+  useEffect(() => {
+    if (currentAlbum?.id) {
+      refreshLivePhotos();
+    }
+  }, [currentAlbum?.id, refreshLivePhotos]);
 
   // ZIP download modal state
   const [zipModalOpen, setZipModalOpen] = useState(false);
@@ -62,20 +115,42 @@ export default function AlbumDetailPage() {
     completedFiles: 0,
   });
 
-  if (!album) {
+  // If album is still loading from catalog
+  if (!currentAlbum) {
+    if (isLoadingCatalog) {
+      return (
+        <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+          <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
+          <div className="flex-grow flex flex-col items-center justify-center p-8 space-y-4">
+            <RefreshCw className="w-8 h-8 animate-spin text-[#870069]" />
+            <p className="text-sm font-semibold text-slate-600">
+              Synchronizing album directly from Google Drive...
+            </p>
+          </div>
+          <Footer />
+        </div>
+      );
+    }
     return notFound();
   }
 
-  // Sorted photos
-  const sortedPhotos = useMemo(() => {
-    const list = [...album.photos];
+  // Filter photos by subfolder if subfolders exist
+  const displayedPhotos = useMemo(() => {
+    let list = [...currentAlbum.photos];
+    if (selectedSubfolder !== "All" && currentAlbum.subfolders) {
+      // Find matching subfolder in albums to get its photos
+      const sub = albums.find((a) => a.name === selectedSubfolder || a.slug === selectedSubfolder);
+      if (sub && sub.photos.length > 0) {
+        list = sub.photos;
+      }
+    }
     if (sortOption === "az") {
       list.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortOption === "za") {
       list.sort((a, b) => b.name.localeCompare(a.name));
     }
     return list;
-  }, [album.photos, sortOption]);
+  }, [currentAlbum, selectedSubfolder, albums, sortOption]);
 
   const handleToggleSelect = (photoId: string) => {
     setSelectedPhotoIds((prev) =>
@@ -86,7 +161,7 @@ export default function AlbumDetailPage() {
   };
 
   const handleSelectAll = () => {
-    setSelectedPhotoIds(album.photos.map((p) => p.id));
+    setSelectedPhotoIds(displayedPhotos.map((p) => p.id));
   };
 
   const handleDeselectAll = () => {
@@ -94,45 +169,41 @@ export default function AlbumDetailPage() {
   };
 
   const handleDownloadAllZip = () => {
-    if (album.photos.length === 0) return;
+    if (displayedPhotos.length === 0) return;
     setZipModalOpen(true);
     downloadPhotosAsZip(
-      album.photos,
-      `${album.name}_Full_Album`,
+      displayedPhotos,
+      `${currentAlbum.name}_Full_Album`,
       (state) => setZipState(state)
     );
   };
 
   const handleDownloadSelectedZip = () => {
-    const selectedPhotos = album.photos.filter((p) =>
+    const selected = displayedPhotos.filter((p) =>
       selectedPhotoIds.includes(p.id)
     );
-    if (selectedPhotos.length === 0) return;
+    if (selected.length === 0) return;
 
     setZipModalOpen(true);
     downloadPhotosAsZip(
-      selectedPhotos,
-      `${album.shortTitle}_Selected_Photos`,
+      selected,
+      `${currentAlbum.shortTitle}_Selected_Photos`,
       (state) => setZipState(state)
     );
   };
-
-  const selectedPhotos = album.photos.filter((p) =>
-    selectedPhotoIds.includes(p.id)
-  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
       {/* Album Hero Cover Banner */}
-      <section className="relative overflow-hidden bg-slate-950 text-white py-16 sm:py-24">
+      <section className="relative overflow-hidden bg-slate-950 text-white py-14 sm:py-20">
         {/* Cover Background */}
         <div className="absolute inset-0 z-0">
-          {album.coverPhoto && (
+          {currentAlbum.coverPhoto && (
             <img
-              src={album.coverPhoto.previewUrl}
-              alt={album.name}
+              src={currentAlbum.coverPhoto.previewUrl}
+              alt={currentAlbum.name}
               referrerPolicy="no-referrer"
               className="w-full h-full object-cover opacity-35 scale-105 filter blur-xs"
             />
@@ -154,19 +225,23 @@ export default function AlbumDetailPage() {
           <div className="space-y-3 max-w-4xl">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-3 py-1 rounded-full bg-[#870069] text-white text-xs font-bold uppercase tracking-wider">
-                {album.category}
+                {currentAlbum.category}
               </span>
               <span className="px-3 py-1 rounded-full bg-white/10 text-white text-xs font-medium border border-white/20">
-                {album.photoCount} High-Resolution Photographs
+                {displayedPhotos.length} High-Resolution Photographs
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-medium border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live Drive Synced ({lastSyncText})
               </span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              {album.name}
+              {currentAlbum.name}
             </h1>
 
             <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-3xl">
-              {album.description}
+              {currentAlbum.description}
             </p>
           </div>
 
@@ -174,35 +249,35 @@ export default function AlbumDetailPage() {
           <div className="pt-2 flex flex-wrap items-center gap-6 text-xs text-slate-300 border-t border-slate-800">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-[#FF693C]" />
-              <span>{album.date}</span>
+              <span>{currentAlbum.date}</span>
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-[#FF693C]" />
-              <span>{album.location}</span>
+              <span>{currentAlbum.location}</span>
             </div>
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-emerald-400" />
-              <span>Photographer: <strong>{album.photographer}</strong></span>
+              <span>Photographer: <strong>{currentAlbum.photographer}</strong></span>
             </div>
           </div>
 
-          {/* Action Buttons: Download All & Share */}
+          {/* Action Buttons: Download All, WhatsApp, Multi-Select, Live Sync */}
           <div className="pt-2 flex items-center gap-3 flex-wrap">
             <button
               onClick={handleDownloadAllZip}
-              disabled={album.photoCount === 0}
+              disabled={displayedPhotos.length === 0}
               className={`px-5 py-3 rounded-xl text-white text-xs sm:text-sm font-bold shadow-md transition-all flex items-center gap-2 ${
-                album.photoCount > 0
+                displayedPhotos.length > 0
                   ? "bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 cursor-pointer"
                   : "bg-slate-800 text-slate-500 cursor-not-allowed"
               }`}
             >
               <Download className="w-4 h-4" />
-              <span>Download Entire Album as ZIP ({album.photoCount})</span>
+              <span>Download Album as ZIP ({displayedPhotos.length})</span>
             </button>
 
             <button
-              onClick={() => shareAlbumOnWhatsApp(album)}
+              onClick={() => shareAlbumOnWhatsApp(currentAlbum)}
               className="px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold transition-colors flex items-center gap-2 cursor-pointer shadow-md"
             >
               <Share2 className="w-4 h-4" />
@@ -225,13 +300,67 @@ export default function AlbumDetailPage() {
               ) : (
                 <>
                   <Square className="w-4 h-4 text-slate-300" />
-                  <span>Select Multiple Photos</span>
+                  <span>Select Multiple</span>
                 </>
               )}
+            </button>
+
+            <button
+              onClick={refreshLivePhotos}
+              disabled={isRefreshingFolder}
+              className="px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold border border-white/20 transition-colors flex items-center gap-2 cursor-pointer"
+              title="Fetch new photos directly from Google Drive"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${
+                  isRefreshingFolder ? "animate-spin text-[#FF693C]" : "text-white"
+                }`}
+              />
+              <span>{isRefreshingFolder ? "Checking Drive..." : "Sync Photos"}</span>
             </button>
           </div>
         </div>
       </section>
+
+      {/* Subfolder Chips (if parent folder has sub-sessions like Day 01 to Day 13) */}
+      {currentAlbum.subfolders && currentAlbum.subfolders.length > 0 && (
+        <section className="bg-white border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap flex items-center gap-1.5 pr-2">
+                <FolderOpen className="w-3.5 h-3.5 text-[#870069]" />
+                Sessions / Days:
+              </span>
+              <button
+                onClick={() => setSelectedSubfolder("All")}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  selectedSubfolder === "All"
+                    ? "bg-[#870069] text-white shadow-xs"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                All Sessions ({currentAlbum.photoCount})
+              </button>
+              {currentAlbum.subfolders.map((sf) => {
+                const isSelected = selectedSubfolder === sf.name;
+                return (
+                  <button
+                    key={sf.id}
+                    onClick={() => setSelectedSubfolder(sf.name)}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      isSelected
+                        ? "bg-[#870069] text-white shadow-xs"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    {sf.name.split("|")[0].trim()} ({sf.count || 50})
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Main Album Photos Grid */}
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8">
@@ -239,7 +368,7 @@ export default function AlbumDetailPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-slate-900">
-              Showing {sortedPhotos.length} Photographs
+              Showing {displayedPhotos.length} Photographs
             </span>
             <span className="text-slate-400">•</span>
             <span className="text-xs text-slate-500">
@@ -262,12 +391,12 @@ export default function AlbumDetailPage() {
           </div>
         </div>
 
-        {/* Photo Grid */}
+        {/* Photos Grid */}
         <PhotoGrid
-          photos={sortedPhotos}
-          album={album}
-          isMultiSelectMode={isMultiSelectMode}
+          photos={displayedPhotos}
+          album={currentAlbum}
           selectedPhotoIds={selectedPhotoIds}
+          isMultiSelectMode={isMultiSelectMode}
           onToggleSelect={handleToggleSelect}
           onOpenLightbox={(idx) => {
             setLightboxIndex(idx);
@@ -276,23 +405,28 @@ export default function AlbumDetailPage() {
         />
       </main>
 
-      {/* Selection Floating Bar */}
+      {/* Multi-Select Float Bar */}
       <SelectionBar
-        selectedPhotos={selectedPhotos}
-        album={album}
-        totalAlbumPhotos={album.photoCount}
+        selectedPhotos={displayedPhotos.filter((p) =>
+          selectedPhotoIds.includes(p.id)
+        )}
+        album={currentAlbum}
+        totalAlbumPhotos={displayedPhotos.length}
         onSelectAll={handleSelectAll}
         onDeselectAll={handleDeselectAll}
         onDownloadZip={handleDownloadSelectedZip}
-        onClear={() => setSelectedPhotoIds([])}
+        onClear={() => {
+          setIsMultiSelectMode(false);
+          setSelectedPhotoIds([]);
+        }}
       />
 
       {/* Lightbox Modal */}
       <LightboxModal
         isOpen={lightboxOpen}
-        photos={sortedPhotos}
+        photos={displayedPhotos}
         initialIndex={lightboxIndex}
-        album={album}
+        album={currentAlbum}
         onClose={() => setLightboxOpen(false)}
       />
 
@@ -303,6 +437,7 @@ export default function AlbumDetailPage() {
         onClose={() => setZipModalOpen(false)}
       />
 
+      {/* Search Modal */}
       <SearchModal
         isOpen={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
