@@ -41,7 +41,7 @@ export default function Hero({
   const displayTotalPhotos = totalPhotos ?? EVENT_DETAILS.totalPhotosCount;
 
   return (
-    <section className="relative overflow-hidden bg-slate-950 text-white py-16 sm:py-24 border-b border-slate-800">
+    <section className="relative overflow-hidden bg-slate-950 text-white py-10 sm:py-20 md:py-24 border-b border-slate-800">
       {/* Background Atmosphere Image with Gradient Overlay */}
       <div className="absolute inset-0 z-0 opacity-40">
         <img
@@ -53,60 +53,60 @@ export default function Hero({
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/90 to-[#0F0210]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 sm:space-y-6">
         {/* Cultural Edition Pill */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-semibold text-white shadow-sm">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-          <span>Po&apos;ylo Vishv Konknni So&apos;ngeet Mo&apos;hame&apos;ll (Active)</span>
+        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] sm:text-sm font-semibold text-white shadow-sm max-w-full truncate">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
+          <span className="truncate">Po&apos;ylo Vishv Konknni So&apos;ngeet Mo&apos;hame&apos;ll (Active)</span>
         </div>
 
         {/* Main Hero Headline */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto">
+        <h1 className="text-2xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto">
           1st World Konkani Music Mega Convention
         </h1>
 
-        <p className="text-sm sm:text-base md:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
+        <p className="text-xs sm:text-base md:text-lg text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
           The official high-resolution photographic archive powered directly by Google Drive.
           Preserving, promoting, and celebrating Konkani music across the globe.
         </p>
 
         {/* Venue, Date & Organizer Bar */}
-        <div className="pt-2 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs sm:text-sm text-slate-300">
+        <div className="pt-1 sm:pt-2 flex flex-wrap items-center justify-center gap-2.5 sm:gap-6 text-[11px] sm:text-sm text-slate-300">
           <div className="flex items-center gap-1.5">
-            <Calendar className="w-4 h-4 text-[#FF693C]" />
-            <span>3 - 15 November, 2026</span>
+            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FF693C]" />
+            <span>3 - 15 Nov, 2026</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-[#FF693C]" />
+            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FF693C]" />
             <span>Kalaangann, Mangalore</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-amber-300" />
+            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
             <span>Mandd Sobhann Media Cell</span>
           </div>
         </div>
 
         {/* Central Search Bar */}
-        <div className="pt-4 max-w-2xl mx-auto">
+        <div className="pt-2 sm:pt-4 max-w-2xl mx-auto">
           <form
             onSubmit={handleSearchSubmit}
-            className="flex items-center gap-2 p-1.5 sm:p-2 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl focus-within:border-[#FF693C] transition-all"
+            className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl focus-within:border-[#FF693C] transition-all"
           >
-            <div className="pl-3 text-slate-400">
-              <Search className="w-5 h-5" />
+            <div className="pl-2 sm:pl-3 text-slate-400">
+              <Search className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <input
               type="text"
-              placeholder="Search photographs, dignitaries, events..."
+              placeholder="Search photos, events, dates..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none px-2 py-2"
+              className="w-full bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none px-1.5 sm:px-2 py-1.5 sm:py-2 min-w-0"
             />
             <button
               type="submit"
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white font-bold text-xs sm:text-sm tracking-wide shadow-md transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white font-bold text-xs sm:text-sm tracking-wide shadow-md transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
-              <span>Search Photos</span>
+              <span>Search</span>
               <ArrowRight className="w-4 h-4 hidden sm:inline" />
             </button>
           </form>

@@ -63,7 +63,7 @@ export default function EventSwitcher({
     <div className="space-y-6">
       {/* Category Filter Chips & Live Sync Button */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-grow">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-grow touch-pan-x">
           <span className="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap pl-1">
             Category:
           </span>
@@ -177,7 +177,7 @@ export default function EventSwitcher({
             </span>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none touch-pan-x">
             <button
               onClick={() => onSelectSubfolder?.("all")}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
@@ -238,11 +238,11 @@ export default function EventSwitcher({
         </div>
 
         {/* Right: Batch Actions (Multi-Select, Download All, WhatsApp) */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3 w-full lg:w-auto">
           {/* Multi-Select Toggle Button */}
           <button
             onClick={onToggleMultiSelect}
-            className={`px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer border ${
+            className={`px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer border ${
               isMultiSelectMode
                 ? "bg-[#870069] text-white border-[#870069] shadow-sm"
                 : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
@@ -250,13 +250,13 @@ export default function EventSwitcher({
           >
             {isMultiSelectMode ? (
               <>
-                <CheckSquare className="w-4 h-4" />
-                <span>Multi-Select Active</span>
+                <CheckSquare className="w-4 h-4 shrink-0" />
+                <span className="truncate">Multi-Select</span>
               </>
             ) : (
               <>
-                <Square className="w-4 h-4 text-slate-400" />
-                <span>Select Multiple</span>
+                <Square className="w-4 h-4 text-slate-400 shrink-0" />
+                <span className="truncate">Select Multiple</span>
               </>
             )}
           </button>
@@ -264,25 +264,25 @@ export default function EventSwitcher({
           {/* Share Active Album on WhatsApp */}
           <button
             onClick={() => shareAlbumOnWhatsApp(activeAlbum)}
-            className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             title="Share this album on WhatsApp"
           >
-            <Share2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Share Album</span>
+            <Share2 className="w-4 h-4 shrink-0" />
+            <span className="truncate">Share Album</span>
           </button>
 
           {/* Download Entire Album ZIP */}
           <button
             onClick={onDownloadAll}
             disabled={totalCount === 0}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center gap-1.5 ${
+            className={`col-span-2 sm:col-span-1 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-1.5 ${
               totalCount > 0
                 ? "bg-gradient-to-r from-[#FF693C] to-[#870069] hover:opacity-95 text-white cursor-pointer"
                 : "bg-slate-200 text-slate-400 cursor-not-allowed"
             }`}
             title="Download full album original files as a ZIP archive"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-4 h-4 shrink-0" />
             <span>Download All ({totalCount})</span>
           </button>
         </div>

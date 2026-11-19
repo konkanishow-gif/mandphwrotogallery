@@ -84,8 +84,8 @@ export default function PhotoGrid({
 
   return (
     <div className="space-y-8">
-      {/* Responsive Spacious Photo Grid with 100% Real Photos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+      {/* Responsive Spacious Photo Grid (2-column on mobile, up to 4 on desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-5">
         {displayedPhotos.map((photo, index) => {
           const isSelected = selectedPhotoIds.includes(photo.id);
           return (

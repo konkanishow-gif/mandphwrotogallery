@@ -107,6 +107,33 @@ export default function LightboxModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, handleNext, handlePrev, onClose]);
 
+  // Mobile Touch Swipe Handling
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 45;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) {
+      handleNext();
+    } else if (isRightSwipe) {
+      handlePrev();
+    }
+  };
+
   if (!isOpen || !currentPhoto) return null;
 
   const handleDownload = () => {
@@ -131,52 +158,50 @@ export default function LightboxModal({
     >
       {/* Top Bar: Event Badge, Drive Filename, Counter, Action Buttons */}
       <div
-        className="flex items-center justify-between text-white w-full px-4 sm:px-6 py-3.5 z-20 border-b border-slate-800/80 bg-slate-950/80"
+        className="flex items-center justify-between text-white w-full px-3 sm:px-6 py-2.5 sm:py-3.5 z-20 border-b border-slate-800/80 bg-slate-950/90 gap-2"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left: Album Name, Exact Google Drive filename, Counter */}
-        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
-          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#870069] text-white">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+          <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-bold bg-[#870069] text-white shrink-0">
             {album.shortTitle}
           </span>
-          <span className="font-mono text-xs sm:text-sm text-amber-300 font-bold bg-white/10 px-2 py-0.5 rounded border border-white/15">
+          <span className="font-mono text-[11px] sm:text-sm text-amber-300 font-bold bg-white/10 px-1.5 sm:px-2 py-0.5 rounded border border-white/15 truncate max-w-[110px] sm:max-w-[240px]">
             {currentPhoto.name}
           </span>
-          <span className="text-xs text-slate-400 font-medium">
-            ({currentIndex + 1} / {photos.length})
+          <span className="text-[10px] sm:text-xs text-slate-400 font-medium shrink-0">
+            ({currentIndex + 1}/{photos.length})
           </span>
         </div>
 
-        {/* Right: Zoom controls, Info, WhatsApp, Download, Close */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Zoom In */}
-          <button
-            onClick={() => setZoomLevel((z) => Math.min(z + 0.5, 3))}
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-            title="Zoom In (+)"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
-
-          {/* Zoom Out */}
-          <button
-            onClick={() => setZoomLevel((z) => Math.max(z - 0.5, 1))}
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-            title="Zoom Out (-)"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-
-          {/* Reset Zoom */}
-          {zoomLevel > 1 && (
+        {/* Right: Zoom controls (desktop), Info, WhatsApp, Download, Close */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Zoom Controls (Desktop only to prevent mobile clutter) */}
+          <div className="hidden md:flex items-center gap-1">
             <button
-              onClick={() => setZoomLevel(1)}
-              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors text-xs font-semibold"
-              title="Reset Zoom (0)"
+              onClick={() => setZoomLevel((z) => Math.min(z + 0.5, 3))}
+              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+              title="Zoom In (+)"
             >
-              <RotateCcw className="w-4 h-4" />
+              <ZoomIn className="w-4 h-4" />
             </button>
-          )}
+            <button
+              onClick={() => setZoomLevel((z) => Math.max(z - 0.5, 1))}
+              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+              title="Zoom Out (-)"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            {zoomLevel > 1 && (
+              <button
+                onClick={() => setZoomLevel(1)}
+                className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 hover:text-amber-300 transition-colors text-xs font-semibold"
+                title="Reset Zoom (0)"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
+          </div>
 
           {/* Details Toggle */}
           <button
@@ -194,27 +219,27 @@ export default function LightboxModal({
           {/* WhatsApp Share */}
           <button
             onClick={handleWhatsApp}
-            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs"
+            className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
             title="Share via WhatsApp"
           >
-            <Share2 className="w-3.5 h-3.5" />
+            <Share2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
             <span className="hidden sm:inline">WhatsApp</span>
           </button>
 
           {/* Download Original */}
           <button
             onClick={handleDownload}
-            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#FF693C] to-[#870069] hover:opacity-95 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+            className="p-2 sm:px-3.5 sm:py-1.5 rounded-xl bg-gradient-to-r from-[#FF693C] to-[#870069] hover:opacity-95 text-white text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
             title={`Download ${currentPhoto.name}`}
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
             <span className="hidden sm:inline">Download HD</span>
           </button>
 
           {/* Close Lightbox */}
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors ml-1"
+            className="p-2 rounded-xl bg-slate-800/80 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors ml-0.5 sm:ml-1"
             title="Close Lightbox (Esc)"
           >
             <X className="w-5 h-5" />
@@ -222,32 +247,35 @@ export default function LightboxModal({
         </div>
       </div>
 
-      {/* Main Center Stage: Image Display + Navigation Chevrons */}
+      {/* Main Center Stage: Image Display + Navigation Chevrons + Touch Swipe */}
       <div
-        className="relative flex-grow flex items-center justify-center p-2 sm:p-4 overflow-hidden"
+        className="relative flex-grow flex items-center justify-center p-2 sm:p-4 overflow-hidden touch-pan-y"
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         {/* Previous Button */}
         {currentIndex > 0 && (
           <button
             onClick={handlePrev}
-            className="absolute left-3 sm:left-6 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-[#870069] text-white border border-white/20 flex items-center justify-center transition-all shadow-xl hover:scale-105"
+            className="absolute left-2 sm:left-6 z-30 w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-slate-900/70 sm:bg-slate-900/80 hover:bg-[#870069] text-white border border-white/20 flex items-center justify-center transition-all shadow-xl hover:scale-105 cursor-pointer"
             aria-label="Previous photograph"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         )}
 
         {/* Loading Spinner */}
         {imgLoading && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-            <div className="w-12 h-12 border-4 border-[#870069]/30 border-t-[#FF693C] rounded-full animate-spin"></div>
+            <div className="w-10 h-10 sm:w-12 sm:h-12 border-3 sm:border-4 border-[#870069]/30 border-t-[#FF693C] rounded-full animate-spin"></div>
           </div>
         )}
 
         {/* The Enlarged Image */}
         <div
-          className="max-w-full max-h-[75vh] flex items-center justify-center transition-transform duration-200"
+          className="max-w-full max-h-[70vh] sm:max-h-[75vh] flex items-center justify-center transition-transform duration-200"
           style={{ transform: `scale(${zoomLevel})` }}
         >
           <img
@@ -262,7 +290,7 @@ export default function LightboxModal({
                 setImgLoading(false);
               }
             }}
-            className="max-w-full max-h-[72vh] rounded-2xl shadow-2xl object-contain border border-slate-800 select-none"
+            className="max-w-full max-h-[68vh] sm:max-h-[72vh] rounded-xl sm:rounded-2xl shadow-2xl object-contain border border-slate-800 select-none"
           />
         </div>
 
@@ -270,21 +298,21 @@ export default function LightboxModal({
         {currentIndex < photos.length - 1 && (
           <button
             onClick={handleNext}
-            className="absolute right-3 sm:right-6 z-30 w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-slate-900/80 hover:bg-[#870069] text-white border border-white/20 flex items-center justify-center transition-all shadow-xl hover:scale-105"
+            className="absolute right-2 sm:right-6 z-30 w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-slate-900/70 sm:bg-slate-900/80 hover:bg-[#870069] text-white border border-white/20 flex items-center justify-center transition-all shadow-xl hover:scale-105 cursor-pointer"
             aria-label="Next photograph"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         )}
 
         {/* Floating Photo Info Drawer */}
         {showInfo && (
-          <div className="absolute top-4 right-4 z-30 w-80 p-4 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 shadow-2xl text-xs space-y-2.5 text-slate-300 animate-in fade-in slide-in-from-right-4 duration-200">
+          <div className="absolute top-2 right-2 inset-x-2 sm:inset-x-auto sm:top-4 sm:right-4 z-30 max-w-sm sm:w-80 ml-auto p-4 rounded-2xl bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 shadow-2xl text-xs space-y-2.5 text-slate-300 animate-in fade-in slide-in-from-right-4 duration-200">
             <div className="flex items-center justify-between pb-2 border-b border-slate-800">
               <span className="font-bold text-white text-sm">Google Drive File Info</span>
               <button
                 onClick={() => setShowInfo(false)}
-                className="text-slate-400 hover:text-white"
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -292,7 +320,7 @@ export default function LightboxModal({
 
             <div>
               <span className="text-slate-500 block text-[10px] uppercase font-bold">File Name</span>
-              <span className="text-amber-300 font-mono font-bold text-sm">{currentPhoto.name}</span>
+              <span className="text-amber-300 font-mono font-bold text-xs sm:text-sm truncate block">{currentPhoto.name}</span>
             </div>
 
             <div>
@@ -326,16 +354,16 @@ export default function LightboxModal({
 
       {/* Bottom Thumbnail Strip for Fast Navigation */}
       <div
-        className="w-full bg-slate-950/90 border-t border-slate-800/80 px-4 py-3 z-20"
+        className="w-full bg-slate-950/90 border-t border-slate-800/80 px-2 sm:px-4 py-2 sm:py-3 z-20"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
           <span className="text-xs font-mono text-amber-300 font-semibold shrink-0 hidden sm:inline">
             {currentPhoto.name}
           </span>
 
           {/* Thumbnails row */}
-          <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none mx-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-1 scrollbar-none mx-auto touch-pan-x">
             {photos.map((p, idx) => {
               const isCurrent = idx === currentIndex;
               return (
@@ -346,7 +374,7 @@ export default function LightboxModal({
                     setZoomLevel(1);
                     setImgLoading(true);
                   }}
-                  className={`relative w-12 h-9 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                  className={`relative w-10 h-7 sm:w-12 sm:h-9 rounded-md sm:rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
                     isCurrent
                       ? "border-[#FF693C] scale-110 shadow-md ring-2 ring-[#870069]"
                       : "border-transparent opacity-60 hover:opacity-100"

@@ -113,30 +113,30 @@ export default function PhotoCard({
             e.stopPropagation();
             onToggleSelect(photo.id);
           }}
-          className={`absolute top-2.5 left-2.5 z-20 transition-all duration-200 ${
+          className={`absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-20 transition-all duration-200 ${
             isMultiSelectMode || isSelected
               ? "opacity-100 scale-100"
               : "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
           }`}
         >
           <div
-            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors shadow-md ${
+            className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-colors shadow-md ${
               isSelected
                 ? "bg-[#870069] text-white"
                 : "bg-white/90 text-slate-700 hover:bg-white"
             }`}
           >
             {isSelected ? (
-              <Check className="w-4 h-4 stroke-[3]" />
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
             ) : (
-              <div className="w-4 h-4 rounded-sm border-2 border-slate-400" />
+              <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-sm border-2 border-slate-400" />
             )}
           </div>
         </div>
 
         {/* Exact Google Drive filename tag at top right */}
-        <div className="absolute top-2.5 right-2.5 z-20 pointer-events-none">
-          <span className="px-2 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-[10px] font-mono font-bold text-amber-300 uppercase tracking-wider border border-white/20 shadow-xs">
+        <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-20 pointer-events-none max-w-[65%] sm:max-w-none">
+          <span className="block px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-[9px] sm:text-[10px] font-mono font-bold text-amber-300 uppercase tracking-wider border border-white/20 shadow-xs truncate">
             {photo.name}
           </span>
         </div>
@@ -184,11 +184,11 @@ export default function PhotoCard({
       </div>
 
       {/* Card Footer: Exact Google Drive Filename & Album Attribution */}
-      <div className="p-3 bg-white flex items-center justify-between text-xs border-t border-slate-100">
-        <span className="font-mono text-[11px] font-bold text-slate-800 truncate" title={photo.name}>
+      <div className="p-2 sm:p-3 bg-white flex items-center justify-between text-xs border-t border-slate-100">
+        <span className="font-mono text-[10px] sm:text-[11px] font-bold text-slate-800 truncate" title={photo.name}>
           {photo.name}
         </span>
-        <span className="text-[10px] text-slate-400 font-medium shrink-0 ml-1">
+        <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium shrink-0 ml-1.5 hidden xs:inline">
           {album.shortTitle}
         </span>
       </div>

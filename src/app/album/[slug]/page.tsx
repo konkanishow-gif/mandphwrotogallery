@@ -198,7 +198,7 @@ export default function AlbumDetailPage() {
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
       {/* Album Hero Cover Banner */}
-      <section className="relative overflow-hidden bg-slate-950 text-white py-14 sm:py-20">
+      <section className="relative overflow-hidden bg-slate-950 text-white py-10 sm:py-20">
         {/* Cover Background */}
         <div className="absolute inset-0 z-0">
           {currentAlbum.coverPhoto && (
@@ -212,7 +212,7 @@ export default function AlbumDetailPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/60" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-4 sm:space-y-6">
           {/* Breadcrumb Navigation */}
           <Link
             href="/albums"
@@ -223,71 +223,71 @@ export default function AlbumDetailPage() {
           </Link>
 
           {/* Album Title & Badges */}
-          <div className="space-y-3 max-w-4xl">
+          <div className="space-y-2.5 sm:space-y-3 max-w-4xl">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-3 py-1 rounded-full bg-[#870069] text-white text-xs font-bold uppercase tracking-wider">
+              <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[#870069] text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider">
                 {currentAlbum.category}
               </span>
-              <span className="px-3 py-1 rounded-full bg-white/10 text-white text-xs font-medium border border-white/20">
-                {displayedPhotos.length} High-Resolution Photographs
+              <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/10 text-white text-[11px] sm:text-xs font-medium border border-white/20">
+                {displayedPhotos.length} HD Photos
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-medium border border-emerald-500/30">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] sm:text-xs font-medium border border-emerald-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live Drive Synced ({lastSyncText})
+                Live Synced
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
               {currentAlbum.name}
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-3xl">
+            <p className="text-xs sm:text-base text-slate-300 leading-relaxed max-w-3xl">
               {currentAlbum.description}
             </p>
           </div>
 
           {/* Event Meta Details Grid */}
-          <div className="pt-2 flex flex-wrap items-center gap-6 text-xs text-slate-300 border-t border-slate-800">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#FF693C]" />
+          <div className="pt-2 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-slate-300 border-t border-slate-800">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FF693C]" />
               <span>{currentAlbum.date}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-[#FF693C]" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#FF693C]" />
               <span>{currentAlbum.location}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
               <span>Photographer: <strong>{currentAlbum.photographer}</strong></span>
             </div>
           </div>
 
           {/* Action Buttons: Download All, WhatsApp, Multi-Select, Live Sync */}
-          <div className="pt-2 flex items-center gap-3 flex-wrap">
+          <div className="pt-2 grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={handleDownloadAllZip}
               disabled={displayedPhotos.length === 0}
-              className={`px-5 py-3 rounded-xl text-white text-xs sm:text-sm font-bold shadow-md transition-all flex items-center gap-2 ${
+              className={`col-span-2 sm:col-span-1 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl text-white text-xs sm:text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2 ${
                 displayedPhotos.length > 0
                   ? "bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 cursor-pointer"
                   : "bg-slate-800 text-slate-500 cursor-not-allowed"
               }`}
             >
-              <Download className="w-4 h-4" />
-              <span>Download Album as ZIP ({displayedPhotos.length})</span>
+              <Download className="w-4 h-4 shrink-0" />
+              <span>Download ZIP ({displayedPhotos.length})</span>
             </button>
 
             <button
               onClick={() => shareAlbumOnWhatsApp(currentAlbum)}
-              className="px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold transition-colors flex items-center gap-2 cursor-pointer shadow-md"
+              className="px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
             >
-              <Share2 className="w-4 h-4" />
-              <span>Share Album on WhatsApp</span>
+              <Share2 className="w-4 h-4 shrink-0" />
+              <span className="truncate">Share WhatsApp</span>
             </button>
 
             <button
               onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
-              className={`px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-colors flex items-center gap-2 border cursor-pointer ${
+              className={`px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 border cursor-pointer ${
                 isMultiSelectMode
                   ? "bg-white text-slate-900 border-white"
                   : "bg-white/10 hover:bg-white/20 text-white border-white/20"
@@ -295,13 +295,13 @@ export default function AlbumDetailPage() {
             >
               {isMultiSelectMode ? (
                 <>
-                  <CheckSquare className="w-4 h-4 text-[#870069]" />
-                  <span>Multi-Select Active</span>
+                  <CheckSquare className="w-4 h-4 text-[#870069] shrink-0" />
+                  <span className="truncate">Multi-Select</span>
                 </>
               ) : (
                 <>
-                  <Square className="w-4 h-4 text-slate-300" />
-                  <span>Select Multiple</span>
+                  <Square className="w-4 h-4 text-slate-300 shrink-0" />
+                  <span className="truncate">Select</span>
                 </>
               )}
             </button>
@@ -309,11 +309,11 @@ export default function AlbumDetailPage() {
             <button
               onClick={refreshLivePhotos}
               disabled={isRefreshingFolder}
-              className="px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold border border-white/20 transition-colors flex items-center gap-2 cursor-pointer"
+              className="col-span-2 sm:col-span-1 px-4 py-2.5 sm:py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold border border-white/20 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               title="Fetch new photos directly from Google Drive"
             >
               <RefreshCw
-                className={`w-4 h-4 ${
+                className={`w-4 h-4 shrink-0 ${
                   isRefreshingFolder ? "animate-spin text-[#FF693C]" : "text-white"
                 }`}
               />
@@ -326,8 +326,8 @@ export default function AlbumDetailPage() {
       {/* Subfolder Chips (if parent folder has sub-sessions like Day 01 to Day 13) */}
       {currentAlbum.subfolders && currentAlbum.subfolders.length > 0 && (
         <section className="bg-white border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none touch-pan-x">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap flex items-center gap-1.5 pr-2">
                 <FolderOpen className="w-3.5 h-3.5 text-[#870069]" />
                 Sessions / Days:
@@ -364,7 +364,7 @@ export default function AlbumDetailPage() {
       )}
 
       {/* Main Album Photos Grid */}
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 space-y-8">
+      <main className="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-16 space-y-6 sm:space-y-8">
         {/* Gallery Toolbar: Total Counter & Sort Options */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
           <div className="flex items-center gap-2">

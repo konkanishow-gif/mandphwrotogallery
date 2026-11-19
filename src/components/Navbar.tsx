@@ -30,20 +30,20 @@ export default function Navbar({ onOpenSearch }: NavbarProps) {
       {/* Top Announcement Bar - Active Convention Indicator */}
       <aside
         aria-label="Active Convention"
-        className="bg-gradient-to-r from-[#6A0050] via-[#870069] to-[#FF693C] text-white text-xs py-2 px-4 shadow-sm"
+        className="bg-gradient-to-r from-[#6A0050] via-[#870069] to-[#FF693C] text-white text-[11px] sm:text-xs py-1.5 sm:py-2 px-3 sm:px-4 shadow-sm"
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 flex-wrap text-center sm:text-left">
-          <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap w-full sm:w-auto">
-            <span className="bg-white/20 backdrop-blur-md text-white font-extrabold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider flex items-center gap-1.5 border border-white/20">
-              <span className="w-2 h-2 rounded-full bg-amber-300 animate-ping"></span>
-              ACTIVE CONVENTION
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-center sm:text-left">
+          <div className="flex items-center gap-1.5 sm:gap-2 justify-center sm:justify-start w-full sm:w-auto truncate">
+            <span className="bg-white/20 backdrop-blur-md text-white font-extrabold px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] uppercase tracking-wider flex items-center gap-1 border border-white/20 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-ping"></span>
+              ACTIVE
             </span>
-            <span className="font-semibold text-white/95">
+            <span className="font-semibold text-white/95 truncate">
               <strong>{EVENT_DETAILS.englishTitle}</strong> — {EVENT_DETAILS.location}
             </span>
           </div>
 
-          <div className="hidden md:flex items-center gap-2 text-[11px] text-white/90">
+          <div className="hidden md:flex items-center gap-2 text-[11px] text-white/90 shrink-0">
             <span className="text-amber-200 font-bold">
               3 - 15 Nov 2026
             </span>
@@ -53,26 +53,26 @@ export default function Navbar({ onOpenSearch }: NavbarProps) {
 
       {/* Main Glass Navigation Bar */}
       <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200/90 shadow-xs transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20 sm:h-22">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-20">
             {/* Dual Logos & Cultural Title */}
-            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-              <Link href="/" className="flex items-center gap-3 sm:gap-4 group">
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+              <Link href="/" className="flex items-center gap-2 sm:gap-4 group">
                 {/* Event Official Emblem - Large, Crisp, Unclipped */}
-                <div className="h-14 sm:h-16 w-auto p-1 bg-white rounded-xl shadow-xs border border-slate-200/90 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <div className="h-11 sm:h-14 w-auto p-1 bg-white rounded-xl shadow-xs border border-slate-200/90 flex items-center justify-center group-hover:scale-105 transition-transform">
                   <img
                     src="/brand/event-logo.jpg"
                     alt="Po'ylo Vishv Konknni So'ngeet Mo'hame'll Emblem"
-                    className="h-full w-auto object-contain max-w-[68px] sm:max-w-[76px]"
+                    className="h-full w-auto object-contain max-w-[52px] sm:max-w-[76px]"
                   />
                 </div>
 
                 {/* Mandd Sobhann Official Brand Logo - Natural Aspect Ratio */}
-                <div className="h-10 sm:h-12 flex items-center pl-1 border-l border-slate-200 group-hover:opacity-95 transition-opacity">
+                <div className="h-8 sm:h-11 flex items-center pl-1 border-l border-slate-200 group-hover:opacity-95 transition-opacity">
                   <img
                     src="/brand/mandd-sobhann-logo.png"
                     alt="Mandd Sobhann Logo"
-                    className="h-full w-auto object-contain max-w-[120px] sm:max-w-[150px]"
+                    className="h-full w-auto object-contain max-w-[105px] sm:max-w-[150px]"
                   />
                 </div>
 

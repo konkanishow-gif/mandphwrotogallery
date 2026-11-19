@@ -90,7 +90,7 @@ export default function AlbumsPage() {
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-10">
+      <main className="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-16 space-y-6 sm:space-y-10">
         {/* Page Title & Breadcrumbs */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div className="space-y-3">
@@ -129,9 +129,9 @@ export default function AlbumsPage() {
         </div>
 
         {/* Filter Toolbar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
           {/* Category Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none touch-pan-x">
             {dynamicCategories.map((cat) => (
               <button
                 key={cat}
@@ -148,7 +148,7 @@ export default function AlbumsPage() {
           </div>
 
           {/* Search Input */}
-          <div className="relative min-w-[260px]">
+          <div className="relative w-full md:min-w-[260px] md:w-auto">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
