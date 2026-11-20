@@ -1,10 +1,6 @@
 import React from "react";
 import Link from "next/link";
 import {
-  Heart,
-  Layers,
-  Sparkles,
-  Camera,
   MapPin,
   Calendar,
 } from "lucide-react";
@@ -12,39 +8,38 @@ import { EVENT_DETAILS, ALBUMS_DATA } from "@/data/driveCatalog";
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-950 text-slate-300 mt-20 border-t border-slate-800">
+    <footer className="bg-slate-950 text-slate-300 mt-16 sm:mt-20 border-t border-slate-800">
       {/* Upper Footer: Brand info & Quick Links */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Column 1: Organization & Logos */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="h-14 w-auto p-1 bg-white rounded-xl shadow-md flex items-center justify-center shrink-0">
+              <div className="h-12 w-auto p-1 bg-white rounded-xl shadow-md flex items-center justify-center shrink-0">
                 <img
                   src="/brand/event-logo.jpg"
                   alt="Event Emblem"
-                  className="h-full w-auto object-contain max-w-[64px]"
+                  className="h-full w-auto object-contain max-w-[60px]"
                 />
               </div>
-              <div className="h-10 flex items-center pl-2 border-l border-slate-700">
+              <div className="h-9 flex items-center pl-2 border-l border-slate-700">
                 <img
                   src="/brand/mandd-sobhann-logo.png"
                   alt="Mandd Sobhann"
-                  className="h-full w-auto object-contain brightness-0 invert max-w-[130px]"
+                  className="h-full w-auto object-contain brightness-0 invert max-w-[120px]"
                 />
               </div>
             </div>
 
             <h3 className="text-white font-extrabold text-base leading-snug">
-              {EVENT_DETAILS.englishTitle} (Active)
+              {EVENT_DETAILS.englishTitle}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Official photographic archive of the First World Konkani Music Mega
-              Convention, presented by Mandd Sobhann — World&apos;s Premier Konkani
-              Cultural Organization.
+              Official photographic archive of the 1st World Konkani Music Mega Convention,
+              presented by Mandd Sobhann — World&apos;s Premier Konkani Cultural Organization.
             </p>
 
-            <div className="space-y-1.5 text-xs text-slate-400 pt-1">
+            <div className="space-y-1 text-xs text-slate-400 pt-1">
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-[#FF693C]" />
                 <span>Kalaangann, Shaktinagar, Mangalore - 575016</span>
@@ -58,7 +53,7 @@ export default function Footer() {
 
           {/* Column 2: Featured Albums */}
           <div className="space-y-3">
-            <h4 className="text-white font-bold text-sm uppercase tracking-wider text-[#FF693C]">
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider text-[#FF693C]">
               Featured Albums
             </h4>
             <ul className="space-y-2 text-xs">
@@ -82,7 +77,7 @@ export default function Footer() {
 
           {/* Column 3: Quick Navigation */}
           <div className="space-y-3">
-            <h4 className="text-white font-bold text-sm uppercase tracking-wider text-[#FF693C]">
+            <h4 className="text-white font-bold text-xs uppercase tracking-wider text-[#FF693C]">
               Quick Navigation
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-400">
@@ -103,48 +98,25 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-
-          {/* Column 4: Official Photography & Engineering Attribution */}
-          <div className="space-y-3">
-            <h4 className="text-white font-bold text-sm uppercase tracking-wider text-[#FF693C]">
-              Official Coverage
-            </h4>
-            <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1.5">
-              <span className="text-[11px] text-amber-300 font-bold block uppercase tracking-wider">
-                Official Photography:
-              </span>
-              <span className="text-sm font-extrabold text-white block">
-                Stanly Bantwal
-              </span>
-              <span className="text-xs text-cyan-300 font-semibold block">
-                Anvita Photography • Ancita Videography
-              </span>
-              <span className="text-[11px] text-slate-400 block">
-                Ph: +91 9164687588 / 9448240584
-              </span>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
-              <span className="text-[10px] text-slate-400 block">
-                Engineering & Platform:
-              </span>
-              <span className="text-xs font-extrabold text-amber-300">
-                Techharmonix
-              </span>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Lower Footer */}
-      <div className="border-t border-slate-900 bg-black/60 py-5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 text-center sm:text-left">
+      {/* Lower Footer: Clean Inline Credits matching user request */}
+      <div className="border-t border-slate-900 bg-black/80 py-4 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-slate-500 text-center sm:text-left">
           <div>
             &copy; {new Date().getFullYear()} {EVENT_DETAILS.organizer}. All rights reserved.
           </div>
-          <div className="flex items-center gap-1 text-slate-400 font-medium">
-            <span>Website built by</span>
-            <strong className="text-white">Techharmonix</strong>
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 text-slate-400 text-xs">
+            <div className="flex items-center gap-1">
+              <span>Photos:</span>
+              <strong className="text-amber-300 font-semibold">Stanly Bantwal</strong>
+            </div>
+            <span className="text-slate-600">•</span>
+            <div className="flex items-center gap-1">
+              <span>Website:</span>
+              <strong className="text-white font-semibold">Techharmonix</strong>
+            </div>
           </div>
         </div>
       </div>

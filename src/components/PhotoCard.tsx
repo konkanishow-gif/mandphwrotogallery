@@ -7,7 +7,6 @@ import {
   Maximize2,
   Check,
   Camera,
-  Eye,
 } from "lucide-react";
 import { PhotoItem, AlbumItem } from "@/data/driveCatalog";
 import { sharePhotoOnWhatsApp } from "@/utils/whatsapp";
@@ -33,12 +32,12 @@ function PhotoCardComponent({
   onToggleSelect,
   onOpenLightbox,
   layoutMode = "grid",
-  fitMode = "contain",
+  fitMode = "cover",
 }: PhotoCardProps) {
   const [loaded, setLoaded] = useState(false);
   const [retryIndex, setRetryIndex] = useState(0);
 
-  // Progressive high-performance Google CDN endpoints (Fastest CDN thumb first to prevent flashing)
+  // Progressive high-performance Google CDN endpoints
   const imageSources = [
     photo.thumbUrl || `https://lh3.googleusercontent.com/d/${photo.id}=s400`,
     `https://lh3.googleusercontent.com/d/${photo.id}=w800`,
@@ -82,18 +81,18 @@ function PhotoCardComponent({
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative rounded-2xl overflow-hidden bg-slate-950 border cursor-pointer select-none transition-transform duration-150 active:scale-[0.98] touch-manipulation ${
+      className={`group relative rounded-2xl overflow-hidden bg-slate-900 border cursor-pointer select-none transition-all duration-200 active:scale-[0.98] touch-manipulation ${
         isSelected
-          ? "ring-3 ring-[#870069] shadow-lg border-[#870069]"
-          : "border-slate-200/90 shadow-2xs hover:shadow-xl hover:border-[#870069]/40 sm:hover:-translate-y-1"
+          ? "ring-3 ring-[#FF693C] shadow-lg border-[#FF693C]"
+          : "border-slate-800/80 shadow-md hover:shadow-2xl hover:border-slate-600 sm:hover:-translate-y-1"
       } ${isFeed ? "w-full max-w-2xl mx-auto" : "w-full"}`}
     >
-      {/* Photo Container: Auto-Fit Size */}
+      {/* Photo Container: Portrait Aspect Ratio matching Reference */}
       <div
         className={`relative w-full bg-slate-950 overflow-hidden flex items-center justify-center ${
           isFeed
             ? "min-h-[280px] max-h-[75vh]"
-            : "aspect-[4/3] sm:aspect-[3/2]"
+            : "aspect-[3/4] sm:aspect-[4/5]"
         }`}
       >
         {!loaded && (
@@ -114,13 +113,9 @@ function PhotoCardComponent({
               setLoaded(true);
             }
           }}
-          className={`transition-opacity duration-200 group-hover:scale-102 ${
-            isFeed
-              ? "w-full h-auto max-h-[75vh] object-contain"
-              : fitMode === "contain"
-              ? "w-full h-full object-contain"
-              : "w-full h-full object-cover"
-          } ${loaded ? "opacity-100" : "opacity-0"}`}
+          className={`w-full h-full object-cover object-center transition-all duration-300 group-hover:scale-103 ${
+            loaded ? "opacity-100" : "opacity-0"
+          }`}
         />
 
         {/* Selection Checkbox */}
@@ -138,23 +133,16 @@ function PhotoCardComponent({
           <div
             className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors shadow-md ${
               isSelected
-                ? "bg-[#870069] text-white"
-                : "bg-white/90 text-slate-700 hover:bg-white"
+                ? "bg-[#FF693C] text-black"
+                : "bg-black/60 backdrop-blur-md text-white border border-white/30 hover:bg-black/80"
             }`}
           >
             {isSelected ? (
               <Check className="w-4 h-4 stroke-[3]" />
             ) : (
-              <div className="w-4 h-4 rounded-sm border-2 border-slate-400" />
+              <div className="w-3.5 h-3.5 rounded-xs border border-white/60" />
             )}
           </div>
-        </div>
-
-        {/* Filename Tag at Top Right */}
-        <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-20 pointer-events-none max-w-[65%] sm:max-w-none">
-          <span className="block px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-950/85 backdrop-blur-md text-[9px] sm:text-[10px] font-mono font-bold text-amber-300 uppercase tracking-wider border border-white/20 shadow-xs truncate">
-            {photo.name}
-          </span>
         </div>
 
         {/* Action Controls for Mobile Feed Mode */}
@@ -196,10 +184,9 @@ function PhotoCardComponent({
         {!isFeed && (
           <div className="hidden sm:flex absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-col justify-end p-3 z-10 pointer-events-none">
             <div className="flex items-center justify-between gap-2 pointer-events-auto">
-              {/* Resolution indicator */}
-              <span className="text-[10px] text-white/90 font-medium truncate flex items-center gap-1">
-                <Camera className="w-3 h-3 text-[#FF693C]" />
-                <span>Drive Master HD</span>
+              {/* Filename indicator */}
+              <span className="text-[10px] text-white/90 font-mono truncate max-w-[120px]">
+                {photo.name}
               </span>
 
               {/* Quick Action Buttons */}
@@ -216,7 +203,7 @@ function PhotoCardComponent({
                 <button
                   onClick={handleDownloadDirect}
                   aria-label="Download original photo"
-                  className="w-7 h-7 rounded-lg bg-white/90 hover:bg-white text-slate-900 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                   title="Download original resolution photo"
                 >
                   <Download className="w-3.5 h-3.5" />

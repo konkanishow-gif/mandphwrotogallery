@@ -30,15 +30,15 @@ export default function Navbar({ onOpenSearch }: NavbarProps) {
       {/* Top Announcement Bar - Active Convention Indicator */}
       <aside
         aria-label="Active Convention"
-        className="bg-gradient-to-r from-[#6A0050] via-[#870069] to-[#FF693C] text-white text-[11px] sm:text-xs py-1.5 sm:py-2 px-3 sm:px-4 shadow-sm"
+        className="bg-gradient-to-r from-[#6A0050] via-[#870069] to-[#FF693C] text-white text-[10px] sm:text-xs py-1 sm:py-1.5 px-3 sm:px-4 shadow-xs"
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-center sm:text-left">
-          <div className="flex items-center gap-1.5 sm:gap-2 justify-center sm:justify-start w-full sm:w-auto truncate">
-            <span className="bg-white/20 backdrop-blur-md text-white font-extrabold px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] uppercase tracking-wider flex items-center gap-1 border border-white/20 shrink-0">
+          <div className="flex items-center gap-1.5 justify-center sm:justify-start w-full sm:w-auto truncate">
+            <span className="bg-white/20 backdrop-blur-md text-white font-extrabold px-1.5 py-0.5 rounded-full text-[9px] uppercase tracking-wider flex items-center gap-1 border border-white/20 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-300 animate-ping"></span>
               ACTIVE
             </span>
-            <span className="font-semibold text-white/95 truncate">
+            <span className="font-semibold text-white/95 truncate text-[11px] sm:text-xs">
               <strong>{EVENT_DETAILS.englishTitle}</strong> — {EVENT_DETAILS.location}
             </span>
           </div>
@@ -51,90 +51,79 @@ export default function Navbar({ onOpenSearch }: NavbarProps) {
         </div>
       </aside>
 
-      {/* Main Glass Navigation Bar */}
-      <nav className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200/90 shadow-xs transition-all duration-300">
+      {/* Main Glass Navigation Bar - Sleek Dark Theme matching Reference */}
+      <nav className="sticky top-0 z-40 bg-[#0B0F19]/95 backdrop-blur-xl border-b border-slate-800 text-white transition-all duration-300">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            {/* Dual Logos & Cultural Title */}
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-              <Link href="/" className="flex items-center gap-2 sm:gap-4 group">
-                {/* Event Official Emblem - Large, Crisp, Unclipped */}
-                <div className="h-11 sm:h-14 w-auto p-1 bg-white rounded-xl shadow-xs border border-slate-200/90 flex items-center justify-center group-hover:scale-105 transition-transform">
+          <div className="flex items-center justify-between h-14 sm:h-18">
+            {/* Dual Logos & Cultural Title matching Reference Screenshot */}
+            <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0 min-w-0">
+              <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
+                {/* Event Official Emblem */}
+                <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-full p-0.5 bg-white shadow-xs border border-slate-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform overflow-hidden">
                   <img
                     src="/brand/event-logo.jpg"
-                    alt="Po'ylo Vishv Konknni So'ngeet Mo'hame'll Emblem"
-                    className="h-full w-auto object-contain max-w-[52px] sm:max-w-[76px]"
+                    alt="Emblem"
+                    className="h-full w-full object-contain"
                   />
                 </div>
 
-                {/* Mandd Sobhann Official Brand Logo - Natural Aspect Ratio */}
-                <div className="h-8 sm:h-11 flex items-center pl-1 border-l border-slate-200 group-hover:opacity-95 transition-opacity">
-                  <img
-                    src="/brand/mandd-sobhann-logo.png"
-                    alt="Mandd Sobhann Logo"
-                    className="h-full w-auto object-contain max-w-[105px] sm:max-w-[150px]"
-                  />
-                </div>
-
-                {/* Brand Titles */}
-                <div className="hidden xl:flex flex-col text-left pl-1">
-                  <span className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight leading-tight group-hover:text-[#870069] transition-colors">
-                    1st World Konkani Music Mega Convention
+                {/* Brand Titles: 2-line title like screenshot */}
+                <div className="flex flex-col text-left truncate">
+                  <span className="font-bold text-xs sm:text-sm md:text-base text-white tracking-tight leading-tight truncate group-hover:text-amber-300 transition-colors">
+                    1st World Konkani Music Convention
                   </span>
-                  <span className="text-[11px] font-semibold text-[#870069]">
-                    Po&apos;ylo Vishv Konknni So&apos;ngeet Mo&apos;hame&apos;ll (Active)
+                  <span className="text-[9px] sm:text-[11px] font-bold text-cyan-400 tracking-wider uppercase truncate">
+                    MANDD SOBHANN • KALAANGANN
                   </span>
                 </div>
               </Link>
             </div>
 
-            {/* Center Navigation Links - Simple & Focused */}
-            <div className="hidden md:flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80">
-              {navLinks.map((link) => {
-                const Icon = link.icon;
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${
-                      isActive
-                        ? "bg-gradient-to-r from-[#870069] to-[#FF693C] text-white shadow-sm"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span>{link.name}</span>
-                  </Link>
-                );
-              })}
-            </div>
+            {/* Right Controls: Search button + Nav Links + Hamburger */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Center Navigation Links (Desktop) */}
+              <div className="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = pathname === link.href;
+                  return (
+                    <Link
+                      key={link.name}
+                      href={link.href}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        isActive
+                          ? "bg-[#870069] text-white"
+                          : "text-slate-400 hover:text-white hover:bg-slate-800"
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{link.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
 
-            {/* Right Action Buttons */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Search Trigger */}
+              {/* Search Trigger Button */}
               <button
                 onClick={onOpenSearch}
-                aria-label="Search photos"
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 hover:text-slate-900 text-xs sm:text-sm font-semibold transition-colors border border-slate-200/60 cursor-pointer"
+                className="p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition-all flex items-center gap-1.5 cursor-pointer"
+                title="Search Photos (⌘K)"
+                aria-label="Search Photos"
               >
-                <Search className="w-4 h-4 text-[#870069]" />
-                <span className="hidden sm:inline">Search Photos...</span>
-                <kbd className="hidden md:inline-block px-1.5 py-0.5 text-[10px] bg-white border border-slate-300 rounded text-slate-500 shadow-2xs font-mono">
-                  ⌘K
-                </kbd>
+                <Search className="w-4 h-4 text-[#FF693C]" />
+                <span className="hidden sm:inline">Search</span>
               </button>
 
               {/* Mobile Hamburger Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="md:hidden p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                 aria-label="Toggle navigation menu"
               >
                 {mobileMenuOpen ? (
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 ) : (
-                  <Menu className="w-6 h-6" />
+                  <Menu className="w-5 h-5" />
                 )}
               </button>
             </div>
@@ -143,7 +132,7 @@ export default function Navbar({ onOpenSearch }: NavbarProps) {
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white/98 border-t border-slate-200/90 px-6 py-5 space-y-3 shadow-xl animate-in slide-in-from-top-2 duration-200">
+          <div className="md:hidden bg-[#0B0F19] border-t border-slate-800 px-5 py-4 space-y-2 shadow-2xl animate-in slide-in-from-top-2 duration-200">
             <div className="space-y-1">
               {navLinks.map((link) => {
                 const Icon = link.icon;
@@ -153,13 +142,13 @@ export default function Navbar({ onOpenSearch }: NavbarProps) {
                     key={link.name}
                     href={link.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors ${
                       isActive
                         ? "bg-[#870069] text-white"
-                        : "text-slate-700 hover:bg-slate-100"
+                        : "text-slate-300 hover:bg-slate-800"
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4" />
                     <span>{link.name}</span>
                   </Link>
                 );

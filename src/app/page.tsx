@@ -22,7 +22,6 @@ import SelectionBar from "@/components/SelectionBar";
 import LightboxModal from "@/components/LightboxModal";
 import ZipDownloadModal from "@/components/ZipDownloadModal";
 import SearchModal from "@/components/SearchModal";
-import PhotoCredits from "@/components/PhotoCredits";
 import Footer from "@/components/Footer";
 import { downloadPhotosAsZip, ZipProgressState } from "@/utils/zipDownload";
 
@@ -275,7 +274,7 @@ export default function HomePage() {
   const totalPhotosCount = allPhotosAlbum.photoCount;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#0B0F19] text-white">
       {/* Primary Sticky Header */}
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
@@ -299,19 +298,19 @@ export default function HomePage() {
       {/* Main Interactive Photo Gallery Container */}
       <main
         id="gallery-section"
-        className="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-16 space-y-6 sm:space-y-8"
+        className="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-12 space-y-5 sm:space-y-8"
       >
         {/* Section Header with Live Google Drive Status & Manual Refresh */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-slate-200">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-4 border-b border-slate-800">
           <div>
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 text-xs font-semibold border border-emerald-800/60">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 Live Google Drive Sync
               </span>
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="text-xs text-slate-400 font-medium">
                 {isSyncing ? (
-                  <span className="text-[#870069] font-semibold flex items-center gap-1">
+                  <span className="text-amber-300 font-semibold flex items-center gap-1">
                     <RefreshCw className="w-3 h-3 animate-spin" />
                     Checking Drive...
                   </span>
@@ -320,10 +319,10 @@ export default function HomePage() {
                 )}
               </span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">
               Convention Photo Library
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
               Select an official Google Drive folder below or explore all {totalPhotosCount} photographs in master resolution.
             </p>
           </div>
@@ -332,7 +331,7 @@ export default function HomePage() {
             <button
               onClick={() => fetchLiveCatalog(true)}
               disabled={isSyncing}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
               title="Force real-time scan of Google Drive"
             >
               <RefreshCw
@@ -416,9 +415,16 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Official Photography Credits Section */}
-        <PhotoCredits className="mt-8 sm:mt-14" />
       </main>
+
+      {/* Sleek Floating Bottom Credit Pill matching Reference */}
+      <div className="fixed bottom-3 inset-x-0 z-30 flex justify-center pointer-events-none px-4">
+        <div className="pointer-events-auto px-4 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-md border border-slate-700/60 shadow-xl text-[11px] text-slate-300 flex items-center gap-2">
+          <span>Photos: <strong className="text-amber-300 font-semibold">Stanly Bantwal</strong></span>
+          <span className="text-slate-500">•</span>
+          <span>Website: <strong className="text-white font-semibold">Techharmonix</strong></span>
+        </div>
+      </div>
 
       {/* Floating Selection Bar */}
       <SelectionBar

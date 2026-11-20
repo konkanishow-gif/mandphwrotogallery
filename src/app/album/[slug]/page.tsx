@@ -25,7 +25,6 @@ import SelectionBar from "@/components/SelectionBar";
 import LightboxModal from "@/components/LightboxModal";
 import ZipDownloadModal from "@/components/ZipDownloadModal";
 import SearchModal from "@/components/SearchModal";
-import PhotoCredits from "@/components/PhotoCredits";
 import { downloadPhotosAsZip, ZipProgressState } from "@/utils/zipDownload";
 import { shareAlbumOnWhatsApp } from "@/utils/whatsapp";
 
@@ -226,7 +225,7 @@ export default function AlbumDetailPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#0B0F19] text-white">
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
       {/* Floating Auto-Sync Notification Toast */}
@@ -461,10 +460,16 @@ export default function AlbumDetailPage() {
             setLightboxOpen(true);
           }}
         />
-
-        {/* Official Photography Credits Section */}
-        <PhotoCredits className="mt-10 sm:mt-16" />
       </main>
+
+      {/* Sleek Floating Bottom Credit Pill matching Reference */}
+      <div className="fixed bottom-3 inset-x-0 z-30 flex justify-center pointer-events-none px-4">
+        <div className="pointer-events-auto px-4 py-1.5 rounded-full bg-slate-900/90 backdrop-blur-md border border-slate-700/60 shadow-xl text-[11px] text-slate-300 flex items-center gap-2">
+          <span>Photos: <strong className="text-amber-300 font-semibold">Stanly Bantwal</strong></span>
+          <span className="text-slate-500">•</span>
+          <span>Website: <strong className="text-white font-semibold">Techharmonix</strong></span>
+        </div>
+      </div>
 
       {/* Multi-Select Float Bar */}
       <SelectionBar
