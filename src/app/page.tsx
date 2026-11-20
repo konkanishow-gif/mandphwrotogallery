@@ -358,9 +358,8 @@ export default function HomePage() {
           onSelectAlbum={(album) => {
             setActiveAlbumId(album.id);
             setActiveSubfolder("all");
-            setLoadedCount(48);
           }}
-          loadedCount={visiblePhotos.length}
+          loadedCount={currentPhotos.length}
           totalCount={currentPhotos.length}
           isMultiSelectMode={isMultiSelectMode}
           onToggleMultiSelect={() => setIsMultiSelectMode(!isMultiSelectMode)}
@@ -372,7 +371,6 @@ export default function HomePage() {
           activeSubfolder={activeSubfolder}
           onSelectSubfolder={(sub) => {
             setActiveSubfolder(sub);
-            setLoadedCount(48);
           }}
         />
 

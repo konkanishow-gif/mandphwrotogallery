@@ -101,12 +101,12 @@ async function scrapeSingleFolder(page, target) {
         el => el.scrollHeight > el.clientHeight && el.clientHeight > 180
       );
       for (const el of scrollableElements) {
-        el.scrollTop += 3500;
+        el.scrollTop += 6000;
       }
-      window.scrollBy(0, 3500);
+      window.scrollBy(0, 6000);
     });
 
-    await new Promise(r => setTimeout(r, 650));
+    await new Promise(r => setTimeout(r, 400));
   }
 
   console.log('>>> FINISHED [' + albumName + ']: Collected ' + allItems.size + ' photos');
@@ -144,9 +144,30 @@ async function run() {
 
   let totalPhotosAcrossAll = 0;
 
+  const alreadyCompleted = new Set([
+    'grand-inauguration',
+    'welcoming-cm',
+    'singing-marathon__day-01-03-11-2026',
+    'singing-marathon__day-02-04-11-2026',
+    'singing-marathon__day-03-05-11-2026',
+    'singing-marathon__day-04-06-11-2026',
+    'singing-marathon__day-05-07-11-2026',
+    'singing-marathon__day-06-08-11-2026',
+    'singing-marathon__day-07-09-11-2026',
+    'singing-marathon__day-08-10-11-2026',
+    'singing-marathon__day-09-11-11-2026',
+    'singing-marathon__day-10-12-11-2026',
+    'singing-marathon__day-11-13-11-2026'
+  ]);
+
   for (let i = 0; i < targets.length; i++) {
     const target = targets[i];
     const key = target.subfolderSlug ? (target.albumSlug + '__' + target.subfolderSlug) : target.albumSlug;
+
+    if (alreadyCompleted.has(key)) {
+      console.log('Skipping already completed folder: ' + key);
+      continue;
+    }
 
     try {
       const photos = await scrapeSingleFolder(page, target);
