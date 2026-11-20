@@ -1,15 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import React from "react";
 import {
-  Search,
   Camera,
   Layers,
   Sparkles,
   Calendar,
   MapPin,
-  ArrowRight,
 } from "lucide-react";
 import { EVENT_DETAILS, ALBUMS_DATA } from "@/data/driveCatalog";
 
@@ -26,22 +23,11 @@ export default function Hero({
   totalPhotos,
   totalAlbums,
 }: HeroProps) {
-  const [searchInput, setSearchInput] = useState("");
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchInput.trim()) {
-      onSearchQuery?.(searchInput.trim());
-    } else {
-      onOpenSearch?.();
-    }
-  };
-
   const displayTotalAlbums = totalAlbums ?? ALBUMS_DATA.length;
   const displayTotalPhotos = totalPhotos ?? EVENT_DETAILS.totalPhotosCount;
 
   return (
-    <section className="relative overflow-hidden bg-slate-950 text-white py-6 sm:py-16 md:py-20 border-b border-slate-800">
+    <section className="relative overflow-hidden bg-slate-950 text-white py-6 sm:py-14 md:py-16 border-b border-slate-800">
       {/* Background Atmosphere Image with Gradient Overlay */}
       <div className="absolute inset-0 z-0 opacity-40">
         <img
@@ -53,7 +39,7 @@ export default function Hero({
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/90 to-[#0F0210]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 text-center space-y-3 sm:space-y-6">
+      <div className="relative z-10 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 text-center space-y-3 sm:space-y-5">
         {/* Cultural Edition Pill */}
         <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10px] sm:text-sm font-semibold text-white shadow-sm max-w-full truncate">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping shrink-0"></span>
@@ -86,53 +72,8 @@ export default function Hero({
           </div>
         </div>
 
-        {/* Central Search Bar */}
-        <div className="pt-2 sm:pt-4 max-w-2xl mx-auto">
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl focus-within:border-[#FF693C] transition-all"
-          >
-            <div className="pl-2 sm:pl-3 text-slate-400">
-              <Search className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search photos, events, dates..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none px-1.5 sm:px-2 py-1.5 sm:py-2 min-w-0"
-            />
-            <button
-              type="submit"
-              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white font-bold text-xs sm:text-sm tracking-wide shadow-md transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
-            >
-              <span>Search</span>
-              <ArrowRight className="w-4 h-4 hidden sm:inline" />
-            </button>
-          </form>
-
-          {/* Quick search tags */}
-          <div className="mt-3 flex items-center justify-center gap-2 flex-wrap text-xs text-slate-300">
-            <span className="text-slate-400 font-medium">Quick Filter:</span>
-            {["Grand Inauguration", "Welcoming CM", "Singing Marathon", "Valedictory"].map(
-              (tag) => (
-                <button
-                  key={tag}
-                  onClick={() => {
-                    setSearchInput(tag);
-                    onSearchQuery?.(tag);
-                  }}
-                  className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white transition-colors cursor-pointer text-[11px]"
-                >
-                  {tag}
-                </button>
-              )
-            )}
-          </div>
-        </div>
-
         {/* 4 Feature Highlights / Real-Time Statistics Counters */}
-        <div className="mt-5 sm:mt-10 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 max-w-4xl mx-auto">
+        <div className="mt-4 sm:mt-8 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 max-w-4xl mx-auto">
           <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md text-center hover:bg-white/10 transition-colors">
             <div className="text-lg sm:text-3xl font-extrabold text-white flex items-center justify-center gap-1">
               <span>{displayTotalAlbums}</span>
