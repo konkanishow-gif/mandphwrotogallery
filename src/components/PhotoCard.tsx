@@ -87,14 +87,12 @@ function PhotoCardComponent({
           : "border-slate-800/80 shadow-xs hover:shadow-lg hover:border-slate-600 sm:hover:-translate-y-0.5"
       } ${isFeed ? "w-full max-w-xl mx-auto" : "w-full"}`}
     >
-      {/* Photo Container: Properly Proportioned, NOT stretched or oversized */}
+      {/* Photo Container: Perfectly Proportioned 3:2 matching DSLR photos */}
       <div
         className={`relative w-full bg-slate-950 overflow-hidden flex items-center justify-center ${
           isFeed
             ? "min-h-[200px] max-h-[65vh]"
-            : isCompact
-            ? "aspect-square sm:aspect-[4/3]"
-            : "aspect-[4/3] sm:aspect-[3/2]"
+            : "aspect-[3/2]"
         }`}
       >
         {!loaded && (

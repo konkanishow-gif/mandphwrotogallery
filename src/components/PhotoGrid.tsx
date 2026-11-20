@@ -40,7 +40,7 @@ function PhotoGridComponent({
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
   // Default to comfortable 2-column on mobile, responsive multi-column on desktop
   const [layoutMode, setLayoutMode] = useState<"compact" | "grid" | "feed">("grid");
-  const [fitMode, setFitMode] = useState<"contain" | "cover">("cover");
+  const [fitMode, setFitMode] = useState<"contain" | "cover">("contain");
 
   // Reset visible count only when album ID changes
   useEffect(() => {
@@ -94,23 +94,18 @@ function PhotoGridComponent({
         </span>
 
         <div className="flex items-center gap-1.5">
-          {/* Fit Mode Toggle: Auto-Fit (Full photo visible) vs Fill Frame (Cropped) */}
+          {/* Fit Mode Toggle: Auto-Fit (Full uncropped photo) vs Fill Frame */}
           <button
             onClick={() => setFitMode(fitMode === "contain" ? "cover" : "contain")}
-            className="px-2 py-1 rounded-lg text-[10px] sm:text-xs font-semibold bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 shadow-2xs flex items-center gap-1 transition-colors"
-            title={fitMode === "contain" ? "Auto-Fit: Entire Photo Visible" : "Fill: Cropped to fill"}
+            className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-xs font-bold border flex items-center gap-1 transition-all cursor-pointer ${
+              fitMode === "contain"
+                ? "bg-slate-800 text-[#FF693C] border-[#FF693C]/40 shadow-xs"
+                : "bg-slate-900 text-slate-400 border-slate-800 hover:text-white"
+            }`}
+            title={fitMode === "contain" ? "Auto-Fit: Full Photo Visible (Uncropped)" : "Fill Frame: Cropped to fill"}
           >
-            {fitMode === "contain" ? (
-              <>
-                <Minimize2 className="w-3 h-3 text-[#FF693C]" />
-                <span className="hidden xs:inline">Auto-Fit</span>
-              </>
-            ) : (
-              <>
-                <Maximize2 className="w-3 h-3 text-amber-300" />
-                <span className="hidden xs:inline">Fill</span>
-              </>
-            )}
+            <Minimize2 className="w-3 h-3 text-[#FF693C]" />
+            <span>Auto-Fit</span>
           </button>
 
           {/* Mobile Layout Mode Toggle: Compact (3-col) vs Grid (2-col) vs Feed (1-col) */}

@@ -327,11 +327,11 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
             <button
               onClick={() => fetchLiveCatalog(true)}
               disabled={isSyncing}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+              className="flex-1 sm:flex-initial justify-center px-3 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
               title="Force real-time scan of Google Drive"
             >
               <RefreshCw
@@ -339,13 +339,13 @@ export default function HomePage() {
                   isSyncing ? "animate-spin text-[#870069]" : "text-[#FF693C]"
                 }`}
               />
-              <span>{isSyncing ? "Scanning Drive..." : "Sync Drive Now"}</span>
+              <span>{isSyncing ? "Scanning..." : "Sync Drive"}</span>
             </button>
             <Link
               href="/albums"
-              className="px-4 py-2 rounded-xl text-xs font-bold bg-[#870069] hover:bg-[#6A0050] text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+              className="flex-1 sm:flex-initial justify-center px-3.5 py-2 rounded-xl text-xs font-bold bg-[#870069] hover:bg-[#6A0050] text-white shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
-              <span>All {albums.length} Folders</span>
+              <span>{albums.length} Folders</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
