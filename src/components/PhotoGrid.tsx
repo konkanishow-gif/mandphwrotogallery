@@ -38,7 +38,8 @@ function PhotoGridComponent({
   onLoadedCountChange,
 }: PhotoGridProps) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
-  const [layoutMode, setLayoutMode] = useState<"grid" | "feed">("grid");
+  // Default to compact (3 photos per row on phone) so photos are never too big
+  const [layoutMode, setLayoutMode] = useState<"compact" | "grid" | "feed">("compact");
   const [fitMode, setFitMode] = useState<"contain" | "cover">("contain");
 
   // Reset visible count only when album ID changes
@@ -62,24 +63,20 @@ function PhotoGridComponent({
     setVisibleCount(photos.length);
   };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 380, behavior: "smooth" });
-  };
-
   if (photos.length === 0) {
     return (
-      <div className="py-12 sm:py-16 px-4 sm:px-6 text-center bg-white rounded-3xl border border-slate-200/90 shadow-2xs max-w-2xl mx-auto space-y-4">
-        <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-3xl bg-purple-50 text-[#870069] flex items-center justify-center shadow-xs">
+      <div className="py-12 sm:py-16 px-4 sm:px-6 text-center bg-slate-900 rounded-2xl border border-slate-800 shadow-2xs max-w-2xl mx-auto space-y-4">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-2xl bg-purple-950/80 text-amber-300 flex items-center justify-center shadow-xs border border-purple-800/40">
           <Clock className="w-7 h-7 sm:w-8 sm:h-8" />
         </div>
         <div className="space-y-1.5">
-          <span className="px-3 py-1 rounded-full bg-purple-50 text-[#870069] text-xs font-bold uppercase tracking-wider">
+          <span className="px-3 py-1 rounded-full bg-purple-950/80 text-amber-300 text-xs font-bold uppercase tracking-wider border border-purple-800/40">
             Official Session Archive
           </span>
-          <h3 className="text-base sm:text-lg font-bold text-slate-900">
+          <h3 className="text-base sm:text-lg font-bold text-white">
             Awaiting Photographs from this Session
           </h3>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed">
             Photographs for <code>{album.name}</code> are currently being processed
             by the media team and will appear here in master resolution.
           </p>
@@ -89,70 +86,85 @@ function PhotoGridComponent({
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-3 sm:space-y-5">
       {/* Mobile-Friendly View Controls Bar */}
-      <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-800">
+      <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-800 flex-wrap">
         <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
           {displayedPhotos.length} of {photos.length} Photos
         </span>
 
         <div className="flex items-center gap-1.5">
-          {/* Fit Mode Toggle: Auto-Fit (Contain) vs Fill Frame (Cover) */}
+          {/* Fit Mode Toggle: Auto-Fit (Full photo visible) vs Fill Frame (Cropped) */}
           <button
             onClick={() => setFitMode(fitMode === "contain" ? "cover" : "contain")}
-            className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 shadow-2xs flex items-center gap-1 transition-colors"
-            title={fitMode === "contain" ? "Switch to Fill Box" : "Switch to Auto-Fit Full Photo"}
+            className="px-2 py-1 rounded-lg text-[10px] sm:text-xs font-semibold bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 shadow-2xs flex items-center gap-1 transition-colors"
+            title={fitMode === "contain" ? "Auto-Fit: Entire Photo Visible" : "Fill: Cropped to fill"}
           >
             {fitMode === "contain" ? (
               <>
-                <Minimize2 className="w-3.5 h-3.5 text-[#FF693C]" />
-                <span className="hidden xs:inline">Auto-Fit: ON</span>
+                <Minimize2 className="w-3 h-3 text-[#FF693C]" />
+                <span className="hidden xs:inline">Auto-Fit</span>
               </>
             ) : (
               <>
-                <Maximize2 className="w-3.5 h-3.5 text-[#870069]" />
-                <span className="hidden xs:inline">Fill Box: ON</span>
+                <Maximize2 className="w-3 h-3 text-amber-300" />
+                <span className="hidden xs:inline">Fill</span>
               </>
             )}
           </button>
 
-          {/* Mobile Layout Mode Toggle: Grid (2-col) vs Full Feed (1-col) */}
-          <div className="flex items-center gap-0.5 bg-slate-900 p-0.5 rounded-xl border border-slate-800">
+          {/* Mobile Layout Mode Toggle: Compact (3-col) vs Grid (2-col) vs Feed (1-col) */}
+          <div className="flex items-center gap-0.5 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
             <button
-              onClick={() => setLayoutMode("grid")}
-              className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
-                layoutMode === "grid"
-                  ? "bg-slate-800 text-white shadow-2xs"
+              onClick={() => setLayoutMode("compact")}
+              className={`p-1 sm:px-2 sm:py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all ${
+                layoutMode === "compact"
+                  ? "bg-slate-800 text-amber-300 shadow-2xs"
                   : "text-slate-400 hover:text-white"
               }`}
-              title="Grid View (2 photos per row on phone)"
+              title="Compact 3 Photos per row (Smaller size)"
             >
-              <LayoutGrid className="w-3.5 h-3.5 text-amber-300" />
-              <span className="hidden sm:inline">Grid</span>
+              <Grid className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Small</span>
+            </button>
+
+            <button
+              onClick={() => setLayoutMode("grid")}
+              className={`p-1 sm:px-2 sm:py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all ${
+                layoutMode === "grid"
+                  ? "bg-slate-800 text-[#FF693C] shadow-2xs"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              title="Medium 2 Photos per row"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Medium</span>
             </button>
 
             <button
               onClick={() => setLayoutMode("feed")}
-              className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+              className={`p-1 sm:px-2 sm:py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all ${
                 layoutMode === "feed"
                   ? "bg-slate-800 text-white shadow-2xs"
                   : "text-slate-400 hover:text-white"
               }`}
-              title="Full Width Auto-Fit Feed (1 photo per row on phone)"
+              title="Full width 1 photo per row"
             >
-              <Square className="w-3.5 h-3.5 text-[#FF693C]" />
-              <span className="hidden sm:inline">Feed</span>
+              <Square className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Feed</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Dynamic Photo Container: 1-col in Feed mode, 2-col to 4-col in Grid mode */}
+      {/* Dynamic Photo Container: Compact 3-col on phone, 2-col, or Feed */}
       <div
         className={
           layoutMode === "feed"
-            ? "flex flex-col gap-4 max-w-2xl mx-auto w-full"
-            : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-5"
+            ? "flex flex-col gap-3 max-w-xl mx-auto w-full"
+            : layoutMode === "compact"
+            ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 sm:gap-2.5"
+            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3.5"
         }
       >
         {displayedPhotos.map((photo, index) => {
@@ -176,46 +188,34 @@ function PhotoGridComponent({
 
       {/* Batch Loading Controls */}
       {hasMore ? (
-        <div className="pt-2 sm:pt-4 text-center flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3">
+        <div className="pt-2 sm:pt-4 text-center flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
           <button
             onClick={handleLoadMore}
-            className="w-full sm:w-auto px-6 sm:px-8 py-3.5 bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md shadow-purple-900/20 hover:shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
+            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 hover:border-[#870069]/40"
           >
-            <PlusCircle className="w-4 h-4" />
+            <PlusCircle className="w-4 h-4 text-[#870069]" />
             <span>
-              Load More Photos ({Math.min(BATCH_SIZE, remainingCount)} remaining)
+              Load More ({Math.min(BATCH_SIZE, remainingCount)} of {remainingCount} remaining)
             </span>
           </button>
 
           <button
             onClick={handleLoadAll}
-            className="w-full sm:w-auto px-5 sm:px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-semibold text-xs sm:text-sm rounded-2xl border border-slate-300 shadow-2xs transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
+            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
           >
-            <Zap className="w-4 h-4 text-[#FF693C]" />
+            <Zap className="w-4 h-4 text-amber-300" />
             <span>Load All Remaining ({remainingCount})</span>
           </button>
         </div>
       ) : (
-        /* All Photos Loaded Notice */
-        <div className="text-center py-6 sm:py-8 px-4 sm:px-6 bg-white rounded-3xl border border-slate-200/90 shadow-2xs max-w-md mx-auto">
-          <div className="w-10 h-10 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
-            <CheckCircle2 className="w-5 h-5" />
+        photos.length > BATCH_SIZE && (
+          <div className="pt-4 text-center">
+            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              All {photos.length} master photographs loaded
+            </span>
           </div>
-          <h4 className="text-slate-900 font-bold text-sm">
-            All {photos.length} Real Photographs Loaded
-          </h4>
-          <p className="text-xs text-slate-500 mt-1">
-            You have explored all genuine photographs from this Google Drive album.
-            Click any photo to preview in full resolution.
-          </p>
-          <button
-            onClick={scrollToTop}
-            className="mt-3.5 text-xs text-[#870069] hover:text-[#FF693C] font-semibold flex items-center justify-center gap-1 mx-auto hover:underline cursor-pointer touch-manipulation"
-          >
-            <ArrowUp className="w-3.5 h-3.5" />
-            <span>Back to Top of Album</span>
-          </button>
-        </div>
+        )
       )}
     </div>
   );

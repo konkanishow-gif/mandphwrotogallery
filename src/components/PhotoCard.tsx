@@ -6,7 +6,6 @@ import {
   Share2,
   Maximize2,
   Check,
-  Camera,
 } from "lucide-react";
 import { PhotoItem, AlbumItem } from "@/data/driveCatalog";
 import { sharePhotoOnWhatsApp } from "@/utils/whatsapp";
@@ -19,7 +18,7 @@ interface PhotoCardProps {
   isMultiSelectMode: boolean;
   onToggleSelect: (photoId: string) => void;
   onOpenLightbox: (index: number) => void;
-  layoutMode?: "grid" | "feed";
+  layoutMode?: "compact" | "grid" | "feed";
   fitMode?: "contain" | "cover";
 }
 
@@ -32,7 +31,7 @@ function PhotoCardComponent({
   onToggleSelect,
   onOpenLightbox,
   layoutMode = "grid",
-  fitMode = "cover",
+  fitMode = "contain",
 }: PhotoCardProps) {
   const [loaded, setLoaded] = useState(false);
   const [retryIndex, setRetryIndex] = useState(0);
@@ -77,22 +76,25 @@ function PhotoCardComponent({
   };
 
   const isFeed = layoutMode === "feed";
+  const isCompact = layoutMode === "compact";
 
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 border cursor-pointer select-none transition-all duration-150 active:scale-[0.98] touch-manipulation ${
+      className={`group relative rounded-lg sm:rounded-xl overflow-hidden bg-slate-900 border cursor-pointer select-none transition-all duration-150 active:scale-[0.98] touch-manipulation ${
         isSelected
-          ? "ring-2 sm:ring-3 ring-[#FF693C] shadow-lg border-[#FF693C]"
-          : "border-slate-800/80 shadow-md hover:shadow-2xl hover:border-slate-600 sm:hover:-translate-y-1"
-      } ${isFeed ? "w-full max-w-2xl mx-auto" : "w-full"}`}
+          ? "ring-2 ring-[#FF693C] shadow-lg border-[#FF693C]"
+          : "border-slate-800/80 shadow-xs hover:shadow-lg hover:border-slate-600 sm:hover:-translate-y-0.5"
+      } ${isFeed ? "w-full max-w-xl mx-auto" : "w-full"}`}
     >
-      {/* Photo Container: Bulletproof Aspect Ratio for Redmi 5A and all Android phones */}
+      {/* Photo Container: Properly Proportioned, NOT stretched or oversized */}
       <div
-        className={`relative w-full bg-slate-950 overflow-hidden ${
+        className={`relative w-full bg-slate-950 overflow-hidden flex items-center justify-center ${
           isFeed
-            ? "min-h-[260px] max-h-[75vh]"
-            : "aspect-[3/4] pt-[133.33%]"
+            ? "min-h-[220px] max-h-[65vh]"
+            : isCompact
+            ? "aspect-square"
+            : "aspect-[4/3] sm:aspect-[3/2]"
         }`}
       >
         {!loaded && (
@@ -113,13 +115,13 @@ function PhotoCardComponent({
               setLoaded(true);
             }
           }}
-          className={`${
+          className={`transition-opacity duration-200 group-hover:scale-102 ${
             isFeed
-              ? "w-full h-auto max-h-[75vh] object-contain"
-              : "absolute inset-0 w-full h-full object-cover object-center"
-          } transition-opacity duration-200 group-hover:scale-103 ${
-            loaded ? "opacity-100" : "opacity-0"
-          }`}
+              ? "w-full h-auto max-h-[65vh] object-contain"
+              : fitMode === "cover"
+              ? "w-full h-full object-cover object-center"
+              : "w-full h-full object-contain object-center p-0.5"
+          } ${loaded ? "opacity-100" : "opacity-0"}`}
         />
 
         {/* Selection Checkbox */}
@@ -128,89 +130,87 @@ function PhotoCardComponent({
             e.stopPropagation();
             onToggleSelect(photo.id);
           }}
-          className={`absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 z-20 transition-all duration-200 touch-manipulation ${
+          className={`absolute top-1 left-1 sm:top-2 sm:left-2 z-20 transition-all duration-200 touch-manipulation ${
             isMultiSelectMode || isSelected
               ? "opacity-100 scale-100"
               : "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
           }`}
         >
           <div
-            className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-colors shadow-md ${
+            className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center transition-colors shadow-md ${
               isSelected
                 ? "bg-[#FF693C] text-black"
                 : "bg-black/70 text-white border border-white/30 hover:bg-black/90"
             }`}
           >
             {isSelected ? (
-              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+              <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[3]" />
             ) : (
-              <div className="w-3 h-3 rounded-xs border border-white/60" />
+              <div className="w-2.5 h-2.5 rounded-xs border border-white/60" />
             )}
           </div>
         </div>
 
         {/* Action Controls for Mobile Feed Mode */}
         {isFeed && (
-          <div className="absolute bottom-2 inset-x-2 z-20 flex items-center justify-between p-2 rounded-xl bg-slate-950/90 border border-white/10 text-white">
-            <span className="text-[11px] font-medium text-slate-300 truncate">
+          <div className="absolute bottom-1.5 inset-x-1.5 z-20 flex items-center justify-between p-1.5 rounded-lg bg-slate-950/90 border border-white/10 text-white">
+            <span className="text-[10px] font-medium text-slate-300 truncate">
               {photo.name}
             </span>
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={handleWhatsAppShare}
-                className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+                className="p-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
                 title="Share on WhatsApp"
               >
-                <Share2 className="w-3.5 h-3.5" />
+                <Share2 className="w-3 h-3" />
               </button>
               <button
                 onClick={handleDownloadDirect}
-                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors"
+                className="p-1 rounded bg-white/20 hover:bg-white/30 text-white transition-colors"
                 title="Download Photo"
               >
-                <Download className="w-3.5 h-3.5" />
+                <Download className="w-3 h-3" />
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onOpenLightbox(index);
                 }}
-                className="p-1.5 rounded-lg bg-[#870069] text-white hover:bg-[#6A0050] transition-colors"
+                className="p-1 rounded bg-[#870069] text-white hover:bg-[#6A0050] transition-colors"
                 title="Full Screen"
               >
-                <Maximize2 className="w-3.5 h-3.5" />
+                <Maximize2 className="w-3 h-3" />
               </button>
             </div>
           </div>
         )}
 
         {/* Desktop Hover Overlay with Action Buttons */}
-        {!isFeed && (
-          <div className="hidden sm:flex absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-col justify-end p-3 z-10 pointer-events-none">
-            <div className="flex items-center justify-between gap-2 pointer-events-auto">
-              {/* Filename indicator */}
-              <span className="text-[10px] text-white/90 font-mono truncate max-w-[120px]">
+        {!isFeed && !isCompact && (
+          <div className="hidden sm:flex absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-col justify-end p-2 z-10 pointer-events-none">
+            <div className="flex items-center justify-between gap-1 pointer-events-auto">
+              <span className="text-[10px] text-white/90 font-mono truncate max-w-[100px]">
                 {photo.name}
               </span>
 
-              {/* Quick Action Buttons */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={handleWhatsAppShare}
                   aria-label="Share on WhatsApp"
-                  className="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                  className="w-6 h-6 rounded bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                   title="Share photo via WhatsApp"
                 >
-                  <Share2 className="w-3.5 h-3.5" />
+                  <Share2 className="w-3 h-3" />
                 </button>
 
                 <button
                   onClick={handleDownloadDirect}
                   aria-label="Download original photo"
-                  className="w-7 h-7 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                  className="w-6 h-6 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                   title="Download original resolution photo"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-3 h-3" />
                 </button>
 
                 <button
@@ -219,10 +219,10 @@ function PhotoCardComponent({
                     onOpenLightbox(index);
                   }}
                   aria-label="View full screen"
-                  className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-md flex items-center justify-center shadow-xs transition-colors cursor-pointer"
+                  className="w-6 h-6 rounded bg-white/20 hover:bg-white/30 text-white backdrop-blur-md flex items-center justify-center shadow-xs transition-colors cursor-pointer"
                   title="Open full resolution lightbox"
                 >
-                  <Maximize2 className="w-3.5 h-3.5" />
+                  <Maximize2 className="w-3 h-3" />
                 </button>
               </div>
             </div>
