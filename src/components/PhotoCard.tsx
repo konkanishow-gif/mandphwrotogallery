@@ -91,20 +91,24 @@ function PhotoCardComponent({
       <div
         className={`relative w-full bg-slate-950 overflow-hidden flex items-center justify-center ${
           isFeed
-            ? "min-h-[220px] max-h-[65vh]"
+            ? "min-h-[200px] max-h-[65vh]"
             : isCompact
-            ? "aspect-square"
+            ? "aspect-square sm:aspect-[4/3]"
             : "aspect-[4/3] sm:aspect-[3/2]"
         }`}
       >
         {!loaded && (
-          <div className="absolute inset-0 bg-slate-900 animate-pulse" />
+          <div className="absolute inset-0 bg-slate-900/80 animate-pulse flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full border-2 border-slate-700 border-t-amber-400 animate-spin opacity-50" />
+          </div>
         )}
 
         <img
           src={currentSrc}
+          srcSet={`https://lh3.googleusercontent.com/d/${photo.id}=s400 400w, https://lh3.googleusercontent.com/d/${photo.id}=w800 800w, https://lh3.googleusercontent.com/d/${photo.id}=w1200 1200w`}
+          sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, (max-width: 1200px) 25vw, 16vw"
           alt={photo.name}
-          loading="lazy"
+          loading={index < 8 ? "eager" : "lazy"}
           decoding="async"
           referrerPolicy="no-referrer"
           onLoad={() => setLoaded(true)}
@@ -115,12 +119,12 @@ function PhotoCardComponent({
               setLoaded(true);
             }
           }}
-          className={`transition-opacity duration-200 group-hover:scale-102 ${
+          className={`transition-all duration-300 group-hover:scale-105 ${
             isFeed
               ? "w-full h-auto max-h-[65vh] object-contain"
               : fitMode === "cover"
               ? "w-full h-full object-cover object-center"
-              : "w-full h-full object-contain object-center p-0.5"
+              : "w-full h-full object-contain object-center"
           } ${loaded ? "opacity-100" : "opacity-0"}`}
         />
 

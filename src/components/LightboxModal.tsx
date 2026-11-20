@@ -240,8 +240,11 @@ export default function LightboxModal({
 
         {/* The Enlarged Image */}
         <div
-          className="max-w-full max-h-[72vh] sm:max-h-[78vh] flex items-center justify-center transition-transform duration-200"
+          className={`max-w-full max-h-[72vh] sm:max-h-[78vh] flex items-center justify-center transition-transform duration-200 ${
+            zoomLevel > 1 ? "overflow-auto cursor-grab active:cursor-grabbing" : ""
+          }`}
           style={{ transform: `scale(${zoomLevel})` }}
+          onDoubleClick={() => setZoomLevel((z) => (z > 1 ? 1 : 2))}
         >
           <img
             src={currentPreviewSrc}
@@ -255,7 +258,7 @@ export default function LightboxModal({
                 setImgLoading(false);
               }
             }}
-            className="max-w-[94vw] max-h-[70vh] sm:max-h-[76vh] rounded-xl sm:rounded-2xl shadow-2xl object-contain border border-slate-800 select-none w-auto h-auto"
+            className="max-w-[94vw] max-h-[70vh] sm:max-h-[76vh] rounded-xl sm:rounded-2xl shadow-2xl object-contain border border-slate-800 select-none w-auto h-auto transition-all"
           />
         </div>
 
@@ -263,12 +266,47 @@ export default function LightboxModal({
         {currentIndex < photos.length - 1 && (
           <button
             onClick={handleNext}
-            className="absolute right-2.5 sm:right-6 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/85 hover:bg-[#FF693C] text-white border border-white/20 flex items-center justify-center transition-all shadow-2xl hover:scale-105 cursor-pointer"
+            className="absolute right-2.5 sm:right-6 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/85 hover:bg-[#FF693C] text-white border border-white/20 flex items-center justify-center transition-all shadow-2xl hover:scale-105 cursor-pointer touch-manipulation"
             aria-label="Next photograph"
           >
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         )}
+
+        {/* Floating Zoom & Pan Controls Bar */}
+        <div className="absolute bottom-3 z-30 flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-slate-800 shadow-xl">
+          <button
+            onClick={() => setZoomLevel((z) => Math.max(z - 0.5, 1))}
+            disabled={zoomLevel <= 1}
+            className="p-1 rounded-lg text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 transition-colors"
+            title="Zoom Out (-)"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
+
+          <span className="text-[11px] font-mono font-bold text-amber-300 px-1 min-w-[36px] text-center">
+            {Math.round(zoomLevel * 100)}%
+          </span>
+
+          <button
+            onClick={() => setZoomLevel((z) => Math.min(z + 0.5, 3))}
+            disabled={zoomLevel >= 3}
+            className="p-1 rounded-lg text-slate-300 hover:text-white disabled:opacity-30 disabled:hover:text-slate-300 transition-colors"
+            title="Zoom In (+)"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
+
+          {zoomLevel > 1 && (
+            <button
+              onClick={() => setZoomLevel(1)}
+              className="p-1 ml-1 rounded-lg text-slate-300 hover:text-amber-300 transition-colors"
+              title="Reset Zoom (0)"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Bottom Area: Navigation hint & Subtle floating domain pill matching reference */}

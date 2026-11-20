@@ -150,11 +150,11 @@ export default function AlbumDetailPage() {
   if (!currentAlbum) {
     if (isLoadingCatalog) {
       return (
-        <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+        <div className="min-h-screen flex flex-col bg-[#0B0F19] text-white">
           <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
           <div className="flex-grow flex flex-col items-center justify-center p-8 space-y-4">
             <RefreshCw className="w-8 h-8 animate-spin text-[#870069]" />
-            <p className="text-sm font-semibold text-slate-600">
+            <p className="text-sm font-semibold text-slate-300">
               Synchronizing album directly from Google Drive...
             </p>
           </div>
@@ -274,6 +274,8 @@ export default function AlbumDetailPage() {
                   `https://lh3.googleusercontent.com/d/${currentAlbum.photos[0]?.id || currentAlbum.id}=s400`
                 }
                 alt={currentAlbum.name}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
             </div>

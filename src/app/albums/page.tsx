@@ -214,8 +214,10 @@ export default function AlbumsPage() {
               <div className="relative w-full aspect-[16/10] bg-slate-950 overflow-hidden">
                 {album.coverPhoto ? (
                   <img
-                    src={album.coverPhoto.previewUrl}
+                    src={album.coverPhoto.thumbUrl || album.coverPhoto.previewUrl}
                     alt={album.name}
+                    loading="lazy"
+                    decoding="async"
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />

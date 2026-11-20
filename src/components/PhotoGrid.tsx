@@ -38,9 +38,9 @@ function PhotoGridComponent({
   onLoadedCountChange,
 }: PhotoGridProps) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
-  // Default to compact (3 photos per row on phone) so photos are never too big
-  const [layoutMode, setLayoutMode] = useState<"compact" | "grid" | "feed">("compact");
-  const [fitMode, setFitMode] = useState<"contain" | "cover">("contain");
+  // Default to comfortable 2-column on mobile, responsive multi-column on desktop
+  const [layoutMode, setLayoutMode] = useState<"compact" | "grid" | "feed">("grid");
+  const [fitMode, setFitMode] = useState<"contain" | "cover">("cover");
 
   // Reset visible count only when album ID changes
   useEffect(() => {
@@ -157,14 +157,14 @@ function PhotoGridComponent({
         </div>
       </div>
 
-      {/* Dynamic Photo Container: Compact 3-col on phone, 2-col, or Feed */}
+      {/* Dynamic Photo Container: 2-col on mobile, 3 on large mobile, 4 on tablet, 5-6 on desktop */}
       <div
         className={
           layoutMode === "feed"
             ? "flex flex-col gap-3 max-w-xl mx-auto w-full"
             : layoutMode === "compact"
-            ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 sm:gap-2.5"
-            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3.5"
+            ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-1.5 sm:gap-2.5"
+            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4"
         }
       >
         {displayedPhotos.map((photo, index) => {

@@ -376,44 +376,15 @@ export default function HomePage() {
           }}
         />
 
-        {/* Responsive Masonry / Dynamic Photo Grid */}
+        {/* Responsive Photo Grid with Built-In Progressive Batching */}
         <PhotoGrid
-          photos={visiblePhotos}
+          photos={currentPhotos}
           album={activeAlbum}
           selectedPhotoIds={selectedPhotoIds}
           isMultiSelectMode={isMultiSelectMode}
           onToggleSelect={handleToggleSelect}
           onOpenLightbox={handleOpenLightbox}
         />
-
-        {/* Progressive Load More Controls */}
-        {loadedCount < currentPhotos.length && (
-          <div className="pt-6 sm:pt-8 pb-4 flex flex-col items-center gap-3">
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 w-full sm:w-auto">
-              <button
-                onClick={() => setLoadedCount((prev) => prev + 48)}
-                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-3.5 rounded-2xl text-xs sm:text-sm font-bold bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 hover:border-[#870069]/40"
-              >
-                <Camera className="w-4 h-4 text-[#870069]" />
-                <span>
-                  Load More ({Math.min(48, currentPhotos.length - loadedCount)} of{" "}
-                  {currentPhotos.length - loadedCount} remaining)
-                </span>
-              </button>
-
-              <button
-                onClick={() => setLoadedCount(currentPhotos.length)}
-                className="w-full sm:w-auto px-6 py-3 sm:py-3.5 rounded-2xl text-xs sm:text-sm font-bold bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                <Zap className="w-4 h-4 text-amber-300" />
-                <span>Load All Remaining ({currentPhotos.length - loadedCount})</span>
-              </button>
-            </div>
-            <span className="text-[11px] text-slate-400 text-center">
-              Showing {loadedCount} of {currentPhotos.length} photographs in this view
-            </span>
-          </div>
-        )}
 
       </main>
 
