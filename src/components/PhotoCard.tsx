@@ -37,7 +37,7 @@ function PhotoCardComponent({
   const [loaded, setLoaded] = useState(false);
   const [retryIndex, setRetryIndex] = useState(0);
 
-  // Progressive high-performance Google CDN endpoints
+  // Progressive high-performance Google CDN endpoints (Fastest CDN thumb first to prevent flashing)
   const imageSources = [
     photo.thumbUrl || `https://lh3.googleusercontent.com/d/${photo.id}=s400`,
     `https://lh3.googleusercontent.com/d/${photo.id}=w800`,
@@ -81,18 +81,18 @@ function PhotoCardComponent({
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative rounded-2xl overflow-hidden bg-slate-900 border cursor-pointer select-none transition-all duration-200 active:scale-[0.98] touch-manipulation ${
+      className={`group relative rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 border cursor-pointer select-none transition-all duration-150 active:scale-[0.98] touch-manipulation ${
         isSelected
-          ? "ring-3 ring-[#FF693C] shadow-lg border-[#FF693C]"
+          ? "ring-2 sm:ring-3 ring-[#FF693C] shadow-lg border-[#FF693C]"
           : "border-slate-800/80 shadow-md hover:shadow-2xl hover:border-slate-600 sm:hover:-translate-y-1"
       } ${isFeed ? "w-full max-w-2xl mx-auto" : "w-full"}`}
     >
-      {/* Photo Container: Portrait Aspect Ratio matching Reference */}
+      {/* Photo Container: Bulletproof Aspect Ratio for Redmi 5A and all Android phones */}
       <div
-        className={`relative w-full bg-slate-950 overflow-hidden flex items-center justify-center ${
+        className={`relative w-full bg-slate-950 overflow-hidden ${
           isFeed
-            ? "min-h-[280px] max-h-[75vh]"
-            : "aspect-[3/4] sm:aspect-[4/5]"
+            ? "min-h-[260px] max-h-[75vh]"
+            : "aspect-[3/4] pt-[133.33%]"
         }`}
       >
         {!loaded && (
@@ -113,7 +113,11 @@ function PhotoCardComponent({
               setLoaded(true);
             }
           }}
-          className={`w-full h-full object-cover object-center transition-all duration-300 group-hover:scale-103 ${
+          className={`${
+            isFeed
+              ? "w-full h-auto max-h-[75vh] object-contain"
+              : "absolute inset-0 w-full h-full object-cover object-center"
+          } transition-opacity duration-200 group-hover:scale-103 ${
             loaded ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -124,34 +128,34 @@ function PhotoCardComponent({
             e.stopPropagation();
             onToggleSelect(photo.id);
           }}
-          className={`absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-20 transition-all duration-200 touch-manipulation ${
+          className={`absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 z-20 transition-all duration-200 touch-manipulation ${
             isMultiSelectMode || isSelected
               ? "opacity-100 scale-100"
               : "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100"
           }`}
         >
           <div
-            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors shadow-md ${
+            className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-colors shadow-md ${
               isSelected
                 ? "bg-[#FF693C] text-black"
-                : "bg-black/60 backdrop-blur-md text-white border border-white/30 hover:bg-black/80"
+                : "bg-black/70 text-white border border-white/30 hover:bg-black/90"
             }`}
           >
             {isSelected ? (
-              <Check className="w-4 h-4 stroke-[3]" />
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
             ) : (
-              <div className="w-3.5 h-3.5 rounded-xs border border-white/60" />
+              <div className="w-3 h-3 rounded-xs border border-white/60" />
             )}
           </div>
         </div>
 
         {/* Action Controls for Mobile Feed Mode */}
         {isFeed && (
-          <div className="absolute bottom-2 inset-x-2 z-20 flex items-center justify-between p-2 rounded-xl bg-slate-950/80 backdrop-blur-md border border-white/10 text-white">
+          <div className="absolute bottom-2 inset-x-2 z-20 flex items-center justify-between p-2 rounded-xl bg-slate-950/90 border border-white/10 text-white">
             <span className="text-[11px] font-medium text-slate-300 truncate">
               {photo.name}
             </span>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={handleWhatsAppShare}
                 className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"

@@ -56,10 +56,10 @@ export default function Navbar({ onOpenSearch }: NavbarProps) {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-18">
             {/* Dual Logos & Cultural Title matching Reference Screenshot */}
-            <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0 min-w-0">
-              <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 mr-2">
+              <Link href="/" className="flex items-center gap-2 group min-w-0">
                 {/* Event Official Emblem */}
-                <div className="h-9 w-9 sm:h-11 sm:w-11 rounded-full p-0.5 bg-white shadow-xs border border-slate-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform overflow-hidden">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full p-0.5 bg-white shadow-xs border border-slate-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform overflow-hidden">
                   <img
                     src="/brand/event-logo.jpg"
                     alt="Emblem"
@@ -68,11 +68,11 @@ export default function Navbar({ onOpenSearch }: NavbarProps) {
                 </div>
 
                 {/* Brand Titles: 2-line title like screenshot */}
-                <div className="flex flex-col text-left truncate">
-                  <span className="font-bold text-xs sm:text-sm md:text-base text-white tracking-tight leading-tight truncate group-hover:text-amber-300 transition-colors">
+                <div className="flex flex-col text-left truncate min-w-0">
+                  <span className="font-bold text-[11px] sm:text-sm md:text-base text-white tracking-tight leading-tight truncate group-hover:text-amber-300 transition-colors">
                     1st World Konkani Music Convention
                   </span>
-                  <span className="text-[9px] sm:text-[11px] font-bold text-cyan-400 tracking-wider uppercase truncate">
+                  <span className="text-[9px] sm:text-[10px] font-bold text-cyan-400 tracking-wider uppercase truncate">
                     MANDD SOBHANN • KALAANGANN
                   </span>
                 </div>

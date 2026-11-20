@@ -160,21 +160,21 @@ export default function LightboxModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left: Orange album badge pill + Photo count */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#FF9800] text-black shrink-0 shadow-sm truncate max-w-[130px] sm:max-w-[200px]">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 mr-1">
+          <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold bg-[#FF9800] text-black shrink-0 shadow-sm truncate max-w-[100px] xs:max-w-[140px] sm:max-w-[200px]">
             {album.shortTitle}
           </span>
-          <span className="text-white text-xs sm:text-sm font-semibold shrink-0">
-            Photo {currentIndex + 1} of {photos.length}
+          <span className="text-white text-[11px] sm:text-sm font-semibold truncate shrink-0">
+            {currentIndex + 1} / {photos.length}
           </span>
         </div>
 
         {/* Right: WhatsApp, Download, Fullscreen/External, Close */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* WhatsApp Share */}
           <button
             onClick={handleWhatsApp}
-            className="p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition-colors flex items-center justify-center shadow-xs cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition-colors flex items-center justify-center shadow-xs cursor-pointer"
             title="Share on WhatsApp"
           >
             <Share2 className="w-4 h-4" />
@@ -183,7 +183,7 @@ export default function LightboxModal({
           {/* Download Original HD */}
           <button
             onClick={handleDownload}
-            className="p-2 sm:px-3 sm:py-2 rounded-xl bg-[#FF9800] hover:bg-amber-400 text-black font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+            className="p-1.5 sm:px-3 sm:py-2 rounded-xl bg-[#FF9800] hover:bg-amber-400 text-black font-bold text-xs transition-all flex items-center gap-1 shadow-sm cursor-pointer"
             title={`Download ${currentPhoto.name}`}
           >
             <Download className="w-4 h-4" />
@@ -195,7 +195,7 @@ export default function LightboxModal({
             href={currentPhoto.previewUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 sm:p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
             title="Open Full Resolution"
           >
             <ExternalLink className="w-4 h-4" />
@@ -204,17 +204,17 @@ export default function LightboxModal({
           {/* Close Lightbox */}
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800/90 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 transition-colors ml-0.5 sm:ml-1"
+            className="p-1.5 sm:p-2 rounded-xl bg-slate-800/90 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 transition-colors"
             title="Close (Esc)"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
 
       {/* Main Center Stage: Image Display + Navigation Chevrons + Touch Swipe */}
       <div
-        className="relative flex-grow flex items-center justify-center p-3 sm:p-6 overflow-hidden touch-pan-y"
+        className="relative flex-grow flex items-center justify-center p-2 sm:p-6 overflow-hidden touch-pan-y"
         onClick={(e) => e.stopPropagation()}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -224,7 +224,7 @@ export default function LightboxModal({
         {currentIndex > 0 && (
           <button
             onClick={handlePrev}
-            className="absolute left-2.5 sm:left-6 z-30 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/85 hover:bg-[#FF693C] text-white border border-white/20 flex items-center justify-center transition-all shadow-2xl hover:scale-105 cursor-pointer"
+            className="absolute left-2 sm:left-6 z-30 w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-slate-900/85 hover:bg-[#FF693C] text-white border border-white/20 flex items-center justify-center transition-all shadow-2xl hover:scale-105 cursor-pointer"
             aria-label="Previous photograph"
           >
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -255,7 +255,7 @@ export default function LightboxModal({
                 setImgLoading(false);
               }
             }}
-            className="max-w-full max-h-[70vh] sm:max-h-[76vh] rounded-2xl shadow-2xl object-contain border border-slate-800 select-none"
+            className="max-w-[94vw] max-h-[70vh] sm:max-h-[76vh] rounded-xl sm:rounded-2xl shadow-2xl object-contain border border-slate-800 select-none w-auto h-auto"
           />
         </div>
 
