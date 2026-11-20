@@ -35,6 +35,7 @@ function PhotoCardComponent({
 }: PhotoCardProps) {
   const [loaded, setLoaded] = useState(false);
   const [retryIndex, setRetryIndex] = useState(0);
+  const imgRef = React.useRef<HTMLImageElement>(null);
 
   // Progressive high-performance Google CDN endpoints (Fastest CDN thumb first to prevent flashing)
   const imageSources = [
@@ -48,7 +49,10 @@ function PhotoCardComponent({
 
   useEffect(() => {
     setRetryIndex(0);
-  }, [photo.id]);
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, [photo.id, currentSrc]);
 
   const handleDownloadDirect = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -96,17 +100,18 @@ function PhotoCardComponent({
         }`}
       >
         {!loaded && (
-          <div className="absolute inset-0 bg-slate-900/80 animate-pulse flex items-center justify-center">
-            <div className="w-5 h-5 rounded-full border-2 border-slate-700 border-t-amber-400 animate-spin opacity-50" />
+          <div className="absolute inset-0 bg-slate-900/50 pointer-events-none flex items-center justify-center">
+            <div className="w-4 h-4 rounded-full border-2 border-slate-700 border-t-amber-400 animate-spin opacity-40" />
           </div>
         )}
 
         <img
+          ref={imgRef}
           src={currentSrc}
           srcSet={`https://lh3.googleusercontent.com/d/${photo.id}=s400 400w, https://lh3.googleusercontent.com/d/${photo.id}=w800 800w, https://lh3.googleusercontent.com/d/${photo.id}=w1200 1200w`}
           sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, (max-width: 1200px) 25vw, 16vw"
           alt={photo.name}
-          loading={index < 8 ? "eager" : "lazy"}
+          loading={index < 16 ? "eager" : "lazy"}
           decoding="async"
           referrerPolicy="no-referrer"
           onLoad={() => setLoaded(true)}
@@ -123,7 +128,7 @@ function PhotoCardComponent({
               : fitMode === "cover"
               ? "w-full h-full object-cover object-center"
               : "w-full h-full object-contain object-center"
-          } ${loaded ? "opacity-100" : "opacity-0"}`}
+          }`}
         />
 
         {/* Selection Checkbox */}

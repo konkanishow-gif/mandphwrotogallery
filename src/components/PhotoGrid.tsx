@@ -1,17 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import {
   PlusCircle,
   Zap,
   CheckCircle2,
-  ArrowUp,
-  Clock,
-  Grid,
-  Maximize2,
   Minimize2,
-  Square,
   LayoutGrid,
+  Clock,
+  Sparkles,
 } from "lucide-react";
 import { PhotoItem, AlbumItem } from "@/data/driveCatalog";
 import PhotoCard from "./PhotoCard";
@@ -26,7 +23,8 @@ interface PhotoGridProps {
   onLoadedCountChange?: (count: number) => void;
 }
 
-const BATCH_SIZE = 48;
+const INITIAL_BATCH = 100;
+const INCREMENT_BATCH = 80;
 
 function PhotoGridComponent({
   photos,
@@ -37,15 +35,16 @@ function PhotoGridComponent({
   onOpenLightbox,
   onLoadedCountChange,
 }: PhotoGridProps) {
-  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
-  // Default to comfortable 2-column on mobile, responsive multi-column on desktop
+  // Generous initial batch so smaller albums load completely without any pagination
+  const [visibleCount, setVisibleCount] = useState(() => Math.min(INITIAL_BATCH, photos.length));
   const [layoutMode, setLayoutMode] = useState<"compact" | "grid" | "feed">("grid");
   const [fitMode, setFitMode] = useState<"contain" | "cover">("contain");
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Reset visible count only when album ID changes
+  // Reset visible count when album changes
   useEffect(() => {
-    setVisibleCount(BATCH_SIZE);
-  }, [album.id]);
+    setVisibleCount(Math.min(INITIAL_BATCH, photos.length));
+  }, [album.id, photos.length]);
 
   useEffect(() => {
     onLoadedCountChange?.(Math.min(visibleCount, photos.length));
@@ -56,12 +55,30 @@ function PhotoGridComponent({
   const remainingCount = photos.length - visibleCount;
 
   const handleLoadMore = () => {
-    setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, photos.length));
+    setVisibleCount((prev) => Math.min(prev + INCREMENT_BATCH, photos.length));
   };
 
   const handleLoadAll = () => {
     setVisibleCount(photos.length);
   };
+
+  // Seamless Infinite Scrolling: Automatically loads next batch 800px before user reaches bottom
+  useEffect(() => {
+    if (!hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + INCREMENT_BATCH, photos.length));
+        }
+      },
+      { rootMargin: "800px" }
+    );
+    const target = sentinelRef.current;
+    if (target) observer.observe(target);
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [hasMore, photos.length]);
 
   if (photos.length === 0) {
     return (
@@ -89,9 +106,24 @@ function PhotoGridComponent({
     <div className="space-y-3 sm:space-y-5">
       {/* Mobile-Friendly View Controls Bar */}
       <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-800 flex-wrap">
-        <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
-          {displayedPhotos.length} of {photos.length} Photos
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] sm:text-xs font-bold text-slate-300 uppercase tracking-wider">
+            {hasMore ? (
+              <span>Showing {displayedPhotos.length} of {photos.length} Photos</span>
+            ) : (
+              <span className="text-emerald-400">All {photos.length} Photos Loaded</span>
+            )}
+          </span>
+          {hasMore && (
+            <button
+              onClick={handleLoadAll}
+              className="text-[10px] font-bold text-amber-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded border border-slate-700 cursor-pointer transition-colors"
+              title="Instantly load all remaining photos without pagination"
+            >
+              Load All ({photos.length})
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center gap-1.5">
           {/* Fit Mode Toggle: Auto-Fit (Full uncropped photo) vs Fill Frame */}
@@ -108,59 +140,57 @@ function PhotoGridComponent({
             <span>Auto-Fit</span>
           </button>
 
-          {/* Mobile Layout Mode Toggle: Compact (3-col) vs Grid (2-col) vs Feed (1-col) */}
+          {/* Mobile Layout Mode Toggle */}
           <div className="flex items-center gap-0.5 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
             <button
               onClick={() => setLayoutMode("compact")}
-              className={`p-1 sm:px-2 sm:py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all ${
+              className={`p-1 sm:px-2 sm:py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
                 layoutMode === "compact"
                   ? "bg-slate-800 text-amber-300 shadow-2xs"
                   : "text-slate-400 hover:text-white"
               }`}
               title="Compact 3 Photos per row (Smaller size)"
             >
-              <Grid className="w-3.5 h-3.5" />
+              <LayoutGrid className="w-3.5 h-3.5" />
               <span className="hidden xs:inline">Small</span>
             </button>
-
             <button
               onClick={() => setLayoutMode("grid")}
-              className={`p-1 sm:px-2 sm:py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all ${
+              className={`p-1 sm:px-2 sm:py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
                 layoutMode === "grid"
                   ? "bg-slate-800 text-[#FF693C] shadow-2xs"
                   : "text-slate-400 hover:text-white"
               }`}
-              title="Medium 2 Photos per row"
+              title="Standard 2 Photos per row on Phone"
             >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline">Medium</span>
+              <span className="text-[10px] font-extrabold px-0.5">2x</span>
+              <span className="hidden xs:inline">Standard</span>
             </button>
-
             <button
               onClick={() => setLayoutMode("feed")}
-              className={`p-1 sm:px-2 sm:py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all ${
+              className={`p-1 sm:px-2 sm:py-1 rounded-md text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
                 layoutMode === "feed"
-                  ? "bg-slate-800 text-white shadow-2xs"
+                  ? "bg-slate-800 text-amber-300 shadow-2xs"
                   : "text-slate-400 hover:text-white"
               }`}
-              title="Full width 1 photo per row"
+              title="Large 1 Photo per row (Detailed Feed view)"
             >
-              <Square className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline">Feed</span>
+              <span className="text-[10px] font-extrabold px-0.5">1x</span>
+              <span className="hidden xs:inline">Large</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Dynamic Photo Container: 2-col on mobile, 3 on large mobile, 4 on tablet, 5-6 on desktop */}
+      {/* Main Responsive Grid Layout */}
       <div
-        className={
-          layoutMode === "feed"
-            ? "flex flex-col gap-3 max-w-xl mx-auto w-full"
-            : layoutMode === "compact"
-            ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-1.5 sm:gap-2.5"
-            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4"
-        }
+        className={`${
+          layoutMode === "compact"
+            ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-1.5 sm:gap-2.5"
+            : layoutMode === "feed"
+            ? "flex flex-col gap-3 sm:gap-5"
+            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 2xl:grid-cols-6 gap-2 sm:gap-3"
+        }`}
       >
         {displayedPhotos.map((photo, index) => {
           const isSelected = selectedPhotoIds.includes(photo.id);
@@ -181,33 +211,38 @@ function PhotoGridComponent({
         })}
       </div>
 
-      {/* Batch Loading Controls */}
+      {/* Seamless Infinite Scroll Sentinel & Batch Controls */}
       {hasMore ? (
-        <div className="pt-2 sm:pt-4 text-center flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-          <button
-            onClick={handleLoadMore}
-            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 hover:border-[#870069]/40"
-          >
-            <PlusCircle className="w-4 h-4 text-[#870069]" />
-            <span>
-              Load More ({Math.min(BATCH_SIZE, remainingCount)} of {remainingCount} remaining)
-            </span>
-          </button>
+        <div ref={sentinelRef} className="pt-4 pb-8 flex flex-col items-center justify-center gap-2.5 text-center">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+            <div className="w-4 h-4 rounded-full border-2 border-slate-700 border-t-[#FF693C] animate-spin" />
+            <span>Auto-loading more photos ({displayedPhotos.length} of {photos.length})...</span>
+          </div>
 
-          <button
-            onClick={handleLoadAll}
-            className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-          >
-            <Zap className="w-4 h-4 text-amber-300" />
-            <span>Load All Remaining ({remainingCount})</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <button
+              onClick={handleLoadMore}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <PlusCircle className="w-3.5 h-3.5 text-[#870069]" />
+              <span>Load More ({Math.min(INCREMENT_BATCH, remainingCount)})</span>
+            </button>
+
+            <button
+              onClick={handleLoadAll}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-300" />
+              <span>Load All {photos.length} Photos</span>
+            </button>
+          </div>
         </div>
       ) : (
-        photos.length > BATCH_SIZE && (
-          <div className="pt-4 text-center">
-            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              All {photos.length} master photographs loaded
+        photos.length > 0 && (
+          <div className="pt-4 pb-6 text-center">
+            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 font-bold bg-emerald-950/60 px-3.5 py-1.5 rounded-full border border-emerald-800/40">
+              <CheckCircle2 className="w-4 h-4" />
+              All {photos.length} Master Photographs Loaded from Google Drive
             </span>
           </div>
         )
