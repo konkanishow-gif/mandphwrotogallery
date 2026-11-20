@@ -50,6 +50,11 @@ export default function EventSwitcher({
   onSelectSubfolder,
 }: EventSwitcherProps) {
   // Dynamically compute unique categories from root albums
+  // Find the album with subfolders (Guinness Marathon) for quick-jump access
+  const marathonAlbum = useMemo(() => {
+    return albums.find((a) => a.hasSubfolders && a.subfolders && a.subfolders.length > 0);
+  }, [albums]);
+
   const dynamicCategories = useMemo(() => {
     const cats = new Set<string>();
     cats.add("All");
@@ -102,6 +107,30 @@ export default function EventSwitcher({
             <span>{isRefreshing ? "Checking Drive..." : "Sync Drive Live"}</span>
           </button>
         )}
+      </div>
+
+      {/* Mobile-Only Direct Album Selector Dropdown */}
+      <div className="block sm:hidden w-full">
+        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+          Select Album / Folder:
+        </label>
+        <select
+          value={activeAlbum.id}
+          onChange={(e) => {
+            const found = albums.find((a) => a.id === e.target.value);
+            if (found) {
+              onSelectAlbum(found);
+              onSelectSubfolder?.("all");
+            }
+          }}
+          className="w-full text-xs font-bold bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-[#FF693C] cursor-pointer shadow-xs"
+        >
+          {albums.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name} ({a.photoCount} HD Photos)
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Main Drive Folders: Swipeable snap carousel on phone, 4-col grid on desktop */}
@@ -164,6 +193,60 @@ export default function EventSwitcher({
           );
         })}
       </div>
+
+      {/* If Active Album does not have subfolders (e.g. All Photos), provide 1-tap Direct Access to Guinness Marathon Days */}
+      {!activeAlbum.hasSubfolders && marathonAlbum && marathonAlbum.subfolders && marathonAlbum.subfolders.length > 0 && (
+        <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-900 border border-slate-800 shadow-2xs space-y-2.5">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <FolderOpen className="w-4 h-4 text-[#FF693C]" />
+              Guinness Marathon Days (Day 01 - Day 13):
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-slate-400 hidden xs:inline">Jump to:</span>
+              <select
+                value="all"
+                onChange={(e) => {
+                  if (e.target.value !== "all") {
+                    onSelectAlbum(marathonAlbum);
+                    onSelectSubfolder?.(e.target.value);
+                  }
+                }}
+                className="text-xs font-bold bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-amber-300 outline-none focus:border-[#FF693C] cursor-pointer shadow-xs"
+              >
+                <option value="all">Quick Jump to Any Day ▼</option>
+                {marathonAlbum.subfolders.map((sf) => (
+                  <option key={sf.id} value={sf.slug}>
+                    {sf.shortTitle || sf.name.split("|")[0].trim()} ({sf.photoCount} Photos)
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* High-Access Wrapped Chips for Day 01 to Day 13 */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
+            {marathonAlbum.subfolders.map((sf) => {
+              const label = sf.shortTitle || sf.name.split("|")[0].trim();
+              return (
+                <button
+                  key={sf.id}
+                  onClick={() => {
+                    onSelectAlbum(marathonAlbum);
+                    onSelectSubfolder?.(sf.slug);
+                  }}
+                  title={`${sf.name} (${sf.photoCount} HD Photos)`}
+                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800/90 text-slate-300 hover:bg-[#870069] hover:text-white border border-slate-700/60 transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <span>{label}</span>
+                  <span className="text-[10px] text-amber-300/80">({sf.photoCount})</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* If Active Album has Subfolders (like Guinness Marathon Day 01-13 or Symposium Sessions) */}
       {activeAlbum.hasSubfolders && activeAlbum.subfolders && activeAlbum.subfolders.length > 0 && (

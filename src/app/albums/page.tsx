@@ -113,7 +113,7 @@ export default function AlbumsPage() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0B0F19] text-white">
+    <div className="min-h-screen w-full max-w-full flex flex-col bg-[#0B0F19] text-white overflow-x-hidden">
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
       {/* Floating Auto-Sync Notification Toast */}
@@ -126,7 +126,7 @@ export default function AlbumsPage() {
         </div>
       )}
 
-      <main className="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-12 space-y-4 sm:space-y-8">
+      <main className="flex-grow w-full max-w-7xl min-w-0 mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-12 space-y-4 sm:space-y-8">
         {/* Page Title & Breadcrumbs */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3">
           <div className="space-y-2">

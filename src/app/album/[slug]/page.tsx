@@ -150,7 +150,7 @@ export default function AlbumDetailPage() {
   if (!currentAlbum) {
     if (isLoadingCatalog) {
       return (
-        <div className="min-h-screen flex flex-col bg-[#0B0F19] text-white">
+        <div className="min-h-screen w-full max-w-full flex flex-col bg-[#0B0F19] text-white overflow-x-hidden">
           <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
           <div className="flex-grow flex flex-col items-center justify-center p-8 space-y-4">
             <RefreshCw className="w-8 h-8 animate-spin text-[#870069]" />
@@ -448,7 +448,7 @@ export default function AlbumDetailPage() {
       )}
 
       {/* Main Album Photos Grid */}
-      <main className="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-10 space-y-4 sm:space-y-6">
+      <main className="flex-grow w-full max-w-7xl min-w-0 mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-10 space-y-4 sm:space-y-6">
         {/* Gallery Toolbar: Total Counter & Sort Options */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-slate-800">
           <div className="flex items-center gap-2">

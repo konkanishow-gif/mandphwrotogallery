@@ -27,7 +27,7 @@ export default function Hero({
   return (
     <section className="relative overflow-hidden bg-slate-950 text-white py-3 sm:py-12 border-b border-slate-800/80">
       {/* Background Atmosphere Image with Gradient Overlay */}
-      <div className="absolute inset-0 z-0 opacity-30">
+      <div className="absolute inset-0 z-0 opacity-30 overflow-hidden">
         <img
           src="https://lh3.googleusercontent.com/d/1EE4zjtobRAVtx7KKXFJFHgAq0bosrF4G=s1920"
           alt="1st World Konkani Music Mega Convention"

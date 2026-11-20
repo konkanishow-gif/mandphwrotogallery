@@ -274,7 +274,7 @@ export default function HomePage() {
   const totalPhotosCount = allPhotosAlbum.photoCount;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0B0F19] text-white">
+    <div className="min-h-screen w-full max-w-full flex flex-col bg-[#0B0F19] text-white overflow-x-hidden">
       {/* Primary Sticky Header */}
       <Navbar onOpenSearch={() => setSearchModalOpen(true)} />
 
@@ -298,7 +298,7 @@ export default function HomePage() {
       {/* Main Interactive Photo Gallery Container */}
       <main
         id="gallery-section"
-        className="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-12 space-y-5 sm:space-y-8"
+        className="flex-grow w-full max-w-7xl min-w-0 mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-12 space-y-5 sm:space-y-8"
       >
         {/* Section Header with Live Google Drive Status & Manual Refresh */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-4 border-b border-slate-800">
