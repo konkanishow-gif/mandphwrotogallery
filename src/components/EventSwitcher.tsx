@@ -102,8 +102,8 @@ export default function EventSwitcher({
         )}
       </div>
 
-      {/* Main Drive Folders Grid (Responsive 2-col on mobile, 4-col on desktop) */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3.5">
+      {/* Main Drive Folders: Swipeable snap carousel on phone, 4-col grid on desktop */}
+      <div className="flex sm:grid overflow-x-auto sm:overflow-visible snap-x sm:snap-none gap-2.5 sm:gap-3.5 pb-2 sm:pb-0 scrollbar-none touch-pan-x sm:grid-cols-2 lg:grid-cols-4">
         {albums.map((album) => {
           const isActive = album.id === activeAlbum.id;
           const hasPhotos = album.photoCount > 0;
@@ -114,7 +114,7 @@ export default function EventSwitcher({
                 onSelectAlbum(album);
                 onSelectSubfolder?.("all");
               }}
-              className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl text-left transition-all duration-150 active:scale-95 touch-manipulation cursor-pointer flex flex-col justify-between gap-2 sm:gap-3 border ${
+              className={`min-w-[170px] sm:min-w-0 snap-start shrink-0 sm:shrink p-3 sm:p-4 rounded-xl sm:rounded-2xl text-left transition-all duration-150 active:scale-95 touch-manipulation cursor-pointer flex flex-col justify-between gap-2 sm:gap-3 border ${
                 isActive
                   ? "bg-gradient-to-r from-[#870069] to-[#6A0050] text-white border-[#870069] shadow-md"
                   : "bg-white hover:bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-300"

@@ -7,6 +7,11 @@ import {
   CheckCircle2,
   ArrowUp,
   Clock,
+  Grid,
+  Maximize2,
+  Minimize2,
+  Square,
+  LayoutGrid,
 } from "lucide-react";
 import { PhotoItem, AlbumItem } from "@/data/driveCatalog";
 import PhotoCard from "./PhotoCard";
@@ -33,8 +38,10 @@ function PhotoGridComponent({
   onLoadedCountChange,
 }: PhotoGridProps) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const [layoutMode, setLayoutMode] = useState<"grid" | "feed">("grid");
+  const [fitMode, setFitMode] = useState<"contain" | "cover">("contain");
 
-  // Reset visible count only when album ID changes, not on every array instance change
+  // Reset visible count only when album ID changes
   useEffect(() => {
     setVisibleCount(BATCH_SIZE);
   }, [album.id]);
@@ -82,9 +89,72 @@ function PhotoGridComponent({
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Responsive Spacious Photo Grid (2 columns on mobile, 3 on tablet, 4 on desktop) */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-5">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Mobile-Friendly View Controls Bar */}
+      <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-200/80">
+        <span className="text-[11px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+          {displayedPhotos.length} of {photos.length} Photos
+        </span>
+
+        <div className="flex items-center gap-1.5">
+          {/* Fit Mode Toggle: Auto-Fit (Contain) vs Fill Frame (Cover) */}
+          <button
+            onClick={() => setFitMode(fitMode === "contain" ? "cover" : "contain")}
+            className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 shadow-2xs flex items-center gap-1 transition-colors"
+            title={fitMode === "contain" ? "Switch to Fill Box" : "Switch to Auto-Fit Full Photo"}
+          >
+            {fitMode === "contain" ? (
+              <>
+                <Minimize2 className="w-3.5 h-3.5 text-[#FF693C]" />
+                <span className="hidden xs:inline">Auto-Fit: ON</span>
+              </>
+            ) : (
+              <>
+                <Maximize2 className="w-3.5 h-3.5 text-[#870069]" />
+                <span className="hidden xs:inline">Fill Box: ON</span>
+              </>
+            )}
+          </button>
+
+          {/* Mobile Layout Mode Toggle: Grid (2-col) vs Full Feed (1-col) */}
+          <div className="flex items-center gap-0.5 bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+            <button
+              onClick={() => setLayoutMode("grid")}
+              className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                layoutMode === "grid"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Grid View (2 photos per row on phone)"
+            >
+              <LayoutGrid className="w-3.5 h-3.5 text-[#870069]" />
+              <span className="hidden sm:inline">Grid</span>
+            </button>
+
+            <button
+              onClick={() => setLayoutMode("feed")}
+              className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all ${
+                layoutMode === "feed"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Full Width Auto-Fit Feed (1 photo per row on phone)"
+            >
+              <Square className="w-3.5 h-3.5 text-[#FF693C]" />
+              <span className="hidden sm:inline">Feed</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Dynamic Photo Container: 1-col in Feed mode, 2-col to 4-col in Grid mode */}
+      <div
+        className={
+          layoutMode === "feed"
+            ? "flex flex-col gap-4 max-w-2xl mx-auto w-full"
+            : "grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-5"
+        }
+      >
         {displayedPhotos.map((photo, index) => {
           const isSelected = selectedPhotoIds.includes(photo.id);
           return (
@@ -97,6 +167,8 @@ function PhotoGridComponent({
               isMultiSelectMode={isMultiSelectMode}
               onToggleSelect={onToggleSelect}
               onOpenLightbox={onOpenLightbox}
+              layoutMode={layoutMode}
+              fitMode={fitMode}
             />
           );
         })}
