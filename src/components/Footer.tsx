@@ -104,21 +104,33 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 4: Engineering & Attribution */}
+          {/* Column 4: Official Photography & Engineering Attribution */}
           <div className="space-y-3">
             <h4 className="text-white font-bold text-sm uppercase tracking-wider text-[#FF693C]">
-              Architected By
+              Official Coverage
             </h4>
-            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-              <span className="text-xs text-slate-400 block">
-                Engineering & Design:
+            <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1.5">
+              <span className="text-[11px] text-amber-300 font-bold block uppercase tracking-wider">
+                Official Photography:
               </span>
-              <span className="text-sm font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#FF693C] to-amber-300">
+              <span className="text-sm font-extrabold text-white block">
+                Stanly Bantwal
+              </span>
+              <span className="text-xs text-cyan-300 font-semibold block">
+                Anvita Photography • Ancita Videography
+              </span>
+              <span className="text-[11px] text-slate-400 block">
+                Ph: +91 9164687588 / 9448240584
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1">
+              <span className="text-[10px] text-slate-400 block">
+                Engineering & Platform:
+              </span>
+              <span className="text-xs font-extrabold text-amber-300">
                 Techharmonix
               </span>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                World-class event photo architecture powered by live Google Drive sync.
-              </p>
             </div>
           </div>
         </div>

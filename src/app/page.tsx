@@ -22,6 +22,7 @@ import SelectionBar from "@/components/SelectionBar";
 import LightboxModal from "@/components/LightboxModal";
 import ZipDownloadModal from "@/components/ZipDownloadModal";
 import SearchModal from "@/components/SearchModal";
+import PhotoCredits from "@/components/PhotoCredits";
 import Footer from "@/components/Footer";
 import { downloadPhotosAsZip, ZipProgressState } from "@/utils/zipDownload";
 
@@ -414,6 +415,9 @@ export default function HomePage() {
             </span>
           </div>
         )}
+
+        {/* Official Photography Credits Section */}
+        <PhotoCredits className="mt-8 sm:mt-14" />
       </main>
 
       {/* Floating Selection Bar */}

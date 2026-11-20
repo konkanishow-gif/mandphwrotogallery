@@ -17,6 +17,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SearchModal from "@/components/SearchModal";
 import LightboxModal from "@/components/LightboxModal";
+import PhotoCredits from "@/components/PhotoCredits";
 import { shareAlbumOnWhatsApp } from "@/utils/whatsapp";
 
 export default function AlbumsPage() {
@@ -300,6 +301,8 @@ export default function AlbumsPage() {
             </p>
           </div>
         )}
+        {/* Official Photography Credits Section */}
+        <PhotoCredits className="mt-8 sm:mt-14" />
       </main>
 
       {/* Lightbox Modal */}

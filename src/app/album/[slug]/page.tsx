@@ -25,6 +25,7 @@ import SelectionBar from "@/components/SelectionBar";
 import LightboxModal from "@/components/LightboxModal";
 import ZipDownloadModal from "@/components/ZipDownloadModal";
 import SearchModal from "@/components/SearchModal";
+import PhotoCredits from "@/components/PhotoCredits";
 import { downloadPhotosAsZip, ZipProgressState } from "@/utils/zipDownload";
 import { shareAlbumOnWhatsApp } from "@/utils/whatsapp";
 
@@ -46,6 +47,8 @@ export default function AlbumDetailPage() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [lastSyncText, setLastSyncText] = useState("Just now");
+  const [autoSyncToast, setAutoSyncToast] = useState<string | null>(null);
+  const prevAlbumPhotosRef = React.useRef(0);
 
   // Fetch live catalog to find newly created folders
   useEffect(() => {
@@ -65,10 +68,6 @@ export default function AlbumDetailPage() {
       .finally(() => setIsLoadingCatalog(false));
   }, [slug]);
 
-  const [syncSecondsAgo, setSyncSecondsAgo] = useState(0);
-  const [autoSyncToast, setAutoSyncToast] = useState<string | null>(null);
-  const prevAlbumPhotosRef = React.useRef(0);
-
   // Fetch on-demand live photos for this specific folder from Google Drive
   const refreshLivePhotos = useCallback(async () => {
     if (!currentAlbum?.id) return;
@@ -86,21 +85,23 @@ export default function AlbumDetailPage() {
 
         setCurrentAlbum((prev) => {
           if (!prev) return prev;
+          const existingIds = new Set(prev.photos.map((p) => p.id));
+          const newPhotos = data.photos.filter((p: any) => !existingIds.has(p.id));
+          if (newPhotos.length === 0) return prev;
+          const merged = [...newPhotos, ...prev.photos];
           return {
             ...prev,
-            photos: data.photos,
-            photoCount: data.photoCount || data.photos.length,
-            coverPhoto: data.photos[0] || prev.coverPhoto,
+            photos: merged,
+            photoCount: merged.length,
+            coverPhoto: merged[0] || prev.coverPhoto,
             subfolders: data.subfolders || prev.subfolders,
             hasLivePhotos: true,
           };
         });
-        setSyncSecondsAgo(0);
         setLastSyncText(
           new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
-            second: "2-digit",
           })
         );
       }
@@ -111,23 +112,15 @@ export default function AlbumDetailPage() {
     }
   }, [currentAlbum?.id]);
 
-  // Trigger live photo check on mount and background loop every 12 seconds
+  // Gentle 30-second live check loop (preserves mobile battery and eliminates screen flicker)
   useEffect(() => {
     if (!currentAlbum?.id) return;
     refreshLivePhotos();
     const interval = setInterval(() => {
       refreshLivePhotos();
-    }, 12000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [currentAlbum?.id, refreshLivePhotos]);
-
-  // Relative seconds timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSyncSecondsAgo((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Immediate sync on tab focus / visibility
   useEffect(() => {
@@ -271,28 +264,43 @@ export default function AlbumDetailPage() {
             <span>Back to All Albums</span>
           </Link>
 
-          {/* Album Title & Badges */}
-          <div className="space-y-2.5 sm:space-y-3 max-w-4xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[#870069] text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider">
-                {currentAlbum.category}
-              </span>
-              <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/10 text-white text-[11px] sm:text-xs font-medium border border-white/20">
-                {displayedPhotos.length} HD Photos
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] sm:text-xs font-medium border border-emerald-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Auto-Sync Active ({isRefreshingFolder ? "Scanning..." : syncSecondsAgo < 3 ? "Synced Just now" : `Synced ${syncSecondsAgo}s ago`})
-              </span>
+          {/* Dedicated Album Cover Thumbnail & Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 max-w-5xl">
+            {/* Visual Cover Thumbnail Photo for the Dedicated Album */}
+            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl overflow-hidden shrink-0 border-2 border-white/20 shadow-2xl bg-slate-900">
+              <img
+                src={
+                  currentAlbum.coverPhoto?.thumbUrl ||
+                  currentAlbum.photos[0]?.thumbUrl ||
+                  `https://lh3.googleusercontent.com/d/${currentAlbum.photos[0]?.id || currentAlbum.id}=s400`
+                }
+                alt={currentAlbum.name}
+                className="w-full h-full object-cover"
+              />
             </div>
 
-            <h1 className="text-2xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              {currentAlbum.name}
-            </h1>
+            <div className="space-y-2 sm:space-y-2.5 flex-grow">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[#870069] text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider">
+                  {currentAlbum.category}
+                </span>
+                <span className="px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full bg-white/10 text-white text-[11px] sm:text-xs font-medium border border-white/20">
+                  {displayedPhotos.length} HD Photos
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] sm:text-xs font-medium border border-emerald-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live Sync ({isRefreshingFolder ? "Checking Drive..." : `Synced at ${lastSyncText}`})
+                </span>
+              </div>
 
-            <p className="text-xs sm:text-base text-slate-300 leading-relaxed max-w-3xl">
-              {currentAlbum.description}
-            </p>
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                {currentAlbum.name}
+              </h1>
+
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl line-clamp-2">
+                {currentAlbum.description}
+              </p>
+            </div>
           </div>
 
           {/* Event Meta Details Grid */}
@@ -453,6 +461,9 @@ export default function AlbumDetailPage() {
             setLightboxOpen(true);
           }}
         />
+
+        {/* Official Photography Credits Section */}
+        <PhotoCredits className="mt-10 sm:mt-16" />
       </main>
 
       {/* Multi-Select Float Bar */}

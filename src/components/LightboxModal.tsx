@@ -339,6 +339,13 @@ export default function LightboxModal({
               </div>
             </div>
 
+            <div className="pt-2 border-t border-slate-800 space-y-1">
+              <span className="text-slate-500 block text-[10px] uppercase font-bold">Official Photography</span>
+              <span className="text-amber-300 font-bold block text-xs">Stanly Bantwal</span>
+              <span className="text-cyan-300 text-[10px] block font-semibold">Anvita Photography & Ancita Videography</span>
+              <span className="text-slate-400 text-[10px] block">Ph: +91 9164687588 / 9448240584</span>
+            </div>
+
             <div className="pt-2 border-t border-slate-800">
               <button
                 onClick={handleDownload}
