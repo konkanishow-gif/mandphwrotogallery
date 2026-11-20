@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PhotoItem, SubfolderItem } from "@/data/driveCatalog";
+import { ALBUMS_DATA, PhotoItem, SubfolderItem } from "@/data/driveCatalog";
 
 function extractCleanId(sskOrStr: string): string {
   const parts = sskOrStr.split(":");
@@ -73,9 +73,9 @@ function parsePhotosFromHtml(html: string): PhotoItem[] {
       photos.push({
         id: cleanId,
         name: rawName,
-        thumbUrl: `https://lh3.googleusercontent.com/d/${cleanId}=s800`,
-        previewUrl: `https://lh3.googleusercontent.com/d/${cleanId}=s1920`,
-        fullUrl: `https://lh3.googleusercontent.com/d/${cleanId}=s0`,
+        thumbUrl: `https://lh3.googleusercontent.com/d/${cleanId}=s400`,
+        previewUrl: `https://lh3.googleusercontent.com/d/${cleanId}=w1600`,
+        fullUrl: `https://lh3.googleusercontent.com/d/${cleanId}=w2400`,
         downloadUrl: `https://drive.google.com/uc?export=download&id=${cleanId}`,
         aspectRatio: "3/2",
       });
@@ -92,60 +92,54 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing folder id" }, { status: 400 });
   }
 
+  // Find baseline album or subfolder from master catalog
+  let baselineAlbum = ALBUMS_DATA.find((a) => a.id === folderId);
+  let baselinePhotos: PhotoItem[] = [];
+
+  if (baselineAlbum) {
+    baselinePhotos = baselineAlbum.photos || [];
+  } else {
+    // Search subfolders
+    for (const a of ALBUMS_DATA) {
+      if (a.subfolders) {
+        const sf = a.subfolders.find((s) => s.id === folderId);
+        if (sf) {
+          baselinePhotos = sf.photos || [];
+          break;
+        }
+      }
+    }
+  }
+
   try {
     const html = await scrapeDriveFolder(folderId);
-    let directPhotos = parsePhotosFromHtml(html);
-    const subFolders = parseFoldersFromHtml(html);
+    const scrapedPhotos = parsePhotosFromHtml(html);
 
-    let allPhotos = [...directPhotos];
-    const subfolderItems: SubfolderItem[] = [];
-
-    // If folder contains subfolders (like Marathon Day 01-13 or Symposium Sessions)
-    if (subFolders.length > 0) {
-      await Promise.all(
-        subFolders.map(async (sf) => {
-          try {
-            const sfHtml = await scrapeDriveFolder(sf.id);
-            const sfPhotos = parsePhotosFromHtml(sfHtml);
-            subfolderItems.push({
-              id: sf.id,
-              name: sf.name,
-              slug: slugify(sf.name),
-              shortTitle: sf.name.split("|")[0].trim(),
-              photoCount: sfPhotos.length,
-              coverPhoto: sfPhotos[0] || null,
-              photos: sfPhotos,
-            });
-            allPhotos.push(...sfPhotos);
-          } catch {
-            subfolderItems.push({
-              id: sf.id,
-              name: sf.name,
-              slug: slugify(sf.name),
-              shortTitle: sf.name.split("|")[0].trim(),
-              photoCount: 0,
-              coverPhoto: null,
-              photos: [],
-            });
-          }
-        })
-      );
-    }
+    // Merge any brand new photos without ever discarding the complete catalog photos
+    const existingIds = new Set(baselinePhotos.map((p) => p.id));
+    const newPhotos = scrapedPhotos.filter((p) => !existingIds.has(p.id));
+    const mergedPhotos = newPhotos.length > 0 ? [...newPhotos, ...baselinePhotos] : baselinePhotos;
 
     return NextResponse.json({
       folderId,
-      photos: allPhotos,
-      photoCount: allPhotos.length,
-      hasSubfolders: subfolderItems.length > 0,
-      subfolderCount: subfolderItems.length,
-      subfolders: subfolderItems,
+      photos: mergedPhotos,
+      photoCount: mergedPhotos.length,
+      hasSubfolders: baselineAlbum?.hasSubfolders || false,
+      subfolderCount: baselineAlbum?.subfolderCount || 0,
+      subfolders: baselineAlbum?.subfolders || [],
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Live folder fetch error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch live folder photos", details: String(error) },
-      { status: 500 }
-    );
+    // Fall back safely to master catalog photos
+    return NextResponse.json({
+      folderId,
+      photos: baselinePhotos,
+      photoCount: baselinePhotos.length,
+      hasSubfolders: baselineAlbum?.hasSubfolders || false,
+      subfolderCount: baselineAlbum?.subfolderCount || 0,
+      subfolders: baselineAlbum?.subfolders || [],
+      updatedAt: new Date().toISOString(),
+      fallback: true,
+    });
   }
 }

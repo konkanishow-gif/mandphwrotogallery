@@ -102,8 +102,8 @@ export default function EventSwitcher({
         )}
       </div>
 
-      {/* Main Drive Folders Grid (Clean 8 Main Albums) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* Main Drive Folders Grid (Responsive 2-col on mobile, 4-col on desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3.5">
         {albums.map((album) => {
           const isActive = album.id === activeAlbum.id;
           const hasPhotos = album.photoCount > 0;
@@ -114,23 +114,23 @@ export default function EventSwitcher({
                 onSelectAlbum(album);
                 onSelectSubfolder?.("all");
               }}
-              className={`p-4 rounded-2xl text-left transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 border ${
+              className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl text-left transition-all duration-150 active:scale-95 touch-manipulation cursor-pointer flex flex-col justify-between gap-2 sm:gap-3 border ${
                 isActive
-                  ? "bg-gradient-to-r from-[#870069] to-[#6A0050] text-white border-[#870069] shadow-md scale-[1.01]"
+                  ? "bg-gradient-to-r from-[#870069] to-[#6A0050] text-white border-[#870069] shadow-md"
                   : "bg-white hover:bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-300"
               }`}
             >
               <div className="w-full">
-                <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center justify-between gap-1 mb-1">
                   <span
-                    className={`block text-[10px] font-bold uppercase tracking-wider truncate ${
+                    className={`block text-[9px] sm:text-[10px] font-bold uppercase tracking-wider truncate ${
                       isActive ? "text-[#FF873C]" : "text-[#870069]"
                     }`}
                   >
                     {album.category}
                   </span>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                    className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold shrink-0 ${
                       isActive
                         ? "bg-[#FF693C] text-white shadow-2xs"
                         : hasPhotos
@@ -139,25 +139,24 @@ export default function EventSwitcher({
                     }`}
                   >
                     {album.hasSubfolders
-                      ? `${album.subfolderCount} Sessions • ${album.photoCount} HD`
+                      ? `${album.photoCount} HD`
                       : hasPhotos
                       ? `${album.photoCount} HD`
-                      : "Empty Folder"}
+                      : "0 Photos"}
                   </span>
                 </div>
 
-                <span className="block font-bold text-sm sm:text-base leading-snug line-clamp-2">
+                <span className="block font-bold text-xs sm:text-base leading-snug line-clamp-2">
                   {album.name}
                 </span>
               </div>
 
               <div
-                className={`text-[11px] pt-2 border-t ${
+                className={`text-[10px] sm:text-[11px] pt-1.5 sm:pt-2 border-t ${
                   isActive ? "border-white/20 text-purple-200" : "border-slate-100 text-slate-400"
-                } flex items-center justify-between`}
+                } flex items-center justify-between truncate`}
               >
-                <span>{album.date}</span>
-                <span>{album.location.split(",")[0]}</span>
+                <span className="truncate">{album.date}</span>
               </div>
             </button>
           );

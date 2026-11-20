@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import {
   PlusCircle,
   Zap,
@@ -23,7 +23,7 @@ interface PhotoGridProps {
 
 const BATCH_SIZE = 48;
 
-export default function PhotoGrid({
+function PhotoGridComponent({
   photos,
   album,
   isMultiSelectMode,
@@ -34,10 +34,10 @@ export default function PhotoGrid({
 }: PhotoGridProps) {
   const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
 
-  // Reset visible count when album or photos change
+  // Reset visible count only when album ID changes, not on every array instance change
   useEffect(() => {
-    setVisibleCount(Math.min(BATCH_SIZE, photos.length));
-  }, [album.id, photos]);
+    setVisibleCount(BATCH_SIZE);
+  }, [album.id]);
 
   useEffect(() => {
     onLoadedCountChange?.(Math.min(visibleCount, photos.length));
@@ -59,18 +59,17 @@ export default function PhotoGrid({
     window.scrollTo({ top: 380, behavior: "smooth" });
   };
 
-  // When folder has 0 photos in Google Drive (real rendering, no dump)
   if (photos.length === 0) {
     return (
-      <div className="py-16 px-6 text-center bg-white rounded-3xl border border-slate-200/90 shadow-2xs max-w-2xl mx-auto space-y-4">
-        <div className="w-16 h-16 mx-auto rounded-3xl bg-purple-50 text-[#870069] flex items-center justify-center shadow-xs">
-          <Clock className="w-8 h-8" />
+      <div className="py-12 sm:py-16 px-4 sm:px-6 text-center bg-white rounded-3xl border border-slate-200/90 shadow-2xs max-w-2xl mx-auto space-y-4">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-3xl bg-purple-50 text-[#870069] flex items-center justify-center shadow-xs">
+          <Clock className="w-7 h-7 sm:w-8 sm:h-8" />
         </div>
         <div className="space-y-1.5">
           <span className="px-3 py-1 rounded-full bg-purple-50 text-[#870069] text-xs font-bold uppercase tracking-wider">
             Official Session Archive
           </span>
-          <h3 className="text-lg font-bold text-slate-900">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900">
             Awaiting Photographs from this Session
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
@@ -83,9 +82,9 @@ export default function PhotoGrid({
   }
 
   return (
-    <div className="space-y-8">
-      {/* Responsive Spacious Photo Grid (2-column on mobile, up to 4 on desktop) */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-5">
+    <div className="space-y-6 sm:space-y-8">
+      {/* Responsive Spacious Photo Grid (2 columns on mobile, 3 on tablet, 4 on desktop) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-5">
         {displayedPhotos.map((photo, index) => {
           const isSelected = selectedPhotoIds.includes(photo.id);
           return (
@@ -105,10 +104,10 @@ export default function PhotoGrid({
 
       {/* Batch Loading Controls */}
       {hasMore ? (
-        <div className="pt-4 text-center flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="pt-2 sm:pt-4 text-center flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3">
           <button
             onClick={handleLoadMore}
-            className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md shadow-purple-900/20 hover:shadow-lg transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto px-6 sm:px-8 py-3.5 bg-gradient-to-r from-[#870069] to-[#FF693C] hover:opacity-95 text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md shadow-purple-900/20 hover:shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
           >
             <PlusCircle className="w-4 h-4" />
             <span>
@@ -118,7 +117,7 @@ export default function PhotoGrid({
 
           <button
             onClick={handleLoadAll}
-            className="w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-semibold text-xs sm:text-sm rounded-2xl border border-slate-300 shadow-2xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto px-5 sm:px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-semibold text-xs sm:text-sm rounded-2xl border border-slate-300 shadow-2xs transition-transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
           >
             <Zap className="w-4 h-4 text-[#FF693C]" />
             <span>Load All Remaining ({remainingCount})</span>
@@ -126,7 +125,7 @@ export default function PhotoGrid({
         </div>
       ) : (
         /* All Photos Loaded Notice */
-        <div className="text-center py-8 px-6 bg-white rounded-3xl border border-slate-200/90 shadow-2xs max-w-md mx-auto">
+        <div className="text-center py-6 sm:py-8 px-4 sm:px-6 bg-white rounded-3xl border border-slate-200/90 shadow-2xs max-w-md mx-auto">
           <div className="w-10 h-10 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2">
             <CheckCircle2 className="w-5 h-5" />
           </div>
@@ -139,7 +138,7 @@ export default function PhotoGrid({
           </p>
           <button
             onClick={scrollToTop}
-            className="mt-3.5 text-xs text-[#870069] hover:text-[#FF693C] font-semibold flex items-center justify-center gap-1 mx-auto hover:underline cursor-pointer"
+            className="mt-3.5 text-xs text-[#870069] hover:text-[#FF693C] font-semibold flex items-center justify-center gap-1 mx-auto hover:underline cursor-pointer touch-manipulation"
           >
             <ArrowUp className="w-3.5 h-3.5" />
             <span>Back to Top of Album</span>
@@ -149,3 +148,5 @@ export default function PhotoGrid({
     </div>
   );
 }
+
+export default memo(PhotoGridComponent);

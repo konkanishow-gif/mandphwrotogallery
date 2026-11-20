@@ -29,7 +29,6 @@ export default function AlbumsPage() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncText, setLastSyncText] = useState("Just now");
-  const [syncSecondsAgo, setSyncSecondsAgo] = useState(0);
   const [autoSyncToast, setAutoSyncToast] = useState<string | null>(null);
   const prevCountRef = React.useRef(0);
 
@@ -44,14 +43,14 @@ export default function AlbumsPage() {
           setAutoSyncToast("📁 Auto-Synced: New Google Drive album detected!");
           setTimeout(() => setAutoSyncToast(null), 5000);
         }
-        prevCountRef.current = data.albums.length;
-        setAlbums(data.albums);
-        setSyncSecondsAgo(0);
+        if (prevCountRef.current !== data.albums.length) {
+          prevCountRef.current = data.albums.length;
+          setAlbums(data.albums);
+        }
         setLastSyncText(
           new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
-            second: "2-digit",
           })
         );
       }
@@ -62,22 +61,14 @@ export default function AlbumsPage() {
     }
   }, []);
 
-  // Continuous background Auto-Sync loop (every 12 seconds)
+  // Background Auto-Sync loop (every 30 seconds)
   useEffect(() => {
     fetchLiveCatalog(false);
     const interval = setInterval(() => {
       fetchLiveCatalog(false);
-    }, 12000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [fetchLiveCatalog]);
-
-  // Relative seconds counter
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSyncSecondsAgo((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Auto-sync immediately when tab gains focus
   useEffect(() => {
@@ -147,10 +138,10 @@ export default function AlbumsPage() {
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Auto-Sync Active (Every 12s)
+                Live Google Drive Sync
               </span>
               <span className="text-xs text-slate-500 font-medium">
-                {isSyncing ? "Checking Drive..." : syncSecondsAgo < 3 ? "Synced Just now" : `Synced ${syncSecondsAgo}s ago`}
+                {isSyncing ? "Checking Drive..." : `Synced at ${lastSyncText}`}
               </span>
             </div>
 

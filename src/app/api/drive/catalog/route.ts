@@ -140,12 +140,16 @@ export async function GET(request: NextRequest) {
             existing.name = driveFolder.name;
             existing.shortTitle = driveFolder.name.replace(/^\d+\s*-\s*/, "").split("(")[0].trim();
 
-            // If direct photos are found in Google Drive, update album photos live!
+            // If direct photos are found in Google Drive, merge any new ones safely!
             if (directPhotos.length > 0) {
-              existing.photos = directPhotos;
-              existing.photoCount = directPhotos.length;
-              existing.coverPhoto = directPhotos[0] || existing.coverPhoto;
-              existing.hasLivePhotos = true;
+              const existingIds = new Set(existing.photos.map((p) => p.id));
+              const newPhotos = directPhotos.filter((p) => !existingIds.has(p.id));
+              if (newPhotos.length > 0) {
+                existing.photos = [...newPhotos, ...existing.photos];
+                existing.photoCount = existing.photos.length;
+                existing.coverPhoto = existing.photos[0] || existing.coverPhoto;
+              }
+              existing.hasLivePhotos = existing.photos.length > 0;
             }
 
             // If folder has subfolders in Google Drive (like Marathon or Symposium)

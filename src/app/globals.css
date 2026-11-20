@@ -10,11 +10,14 @@
     --event-orange-hover: #ea580c;
   }
 
+  html,
   body {
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: #f8fafc;
     color: #0f172a;
     overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }
 

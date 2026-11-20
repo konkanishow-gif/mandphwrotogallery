@@ -87,7 +87,6 @@ export default function HomePage() {
     return albums.find((a) => a.id === activeAlbumId) || allPhotosAlbum;
   }, [activeAlbumId, allPhotosAlbum, albums]);
 
-  const [syncSecondsAgo, setSyncSecondsAgo] = useState(0);
   const [autoSyncToast, setAutoSyncToast] = useState<string | null>(null);
   const prevPhotosCountRef = React.useRef<number>(0);
   const prevAlbumsCountRef = React.useRef<number>(0);
@@ -112,16 +111,17 @@ export default function HomePage() {
           setTimeout(() => setAutoSyncToast(null), 5000);
         }
 
-        prevPhotosCountRef.current = newTotal;
-        prevAlbumsCountRef.current = newAlbumCount;
+        // Only update albums state if total photo count or album count changed
+        if (newTotal !== prevPhotosCountRef.current || newAlbumCount !== prevAlbumsCountRef.current) {
+          prevPhotosCountRef.current = newTotal;
+          prevAlbumsCountRef.current = newAlbumCount;
+          setAlbums(data.albums);
+        }
 
-        setAlbums(data.albums);
-        setSyncSecondsAgo(0);
         setLastSyncText(
           new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
-            second: "2-digit",
           })
         );
       }
@@ -132,22 +132,14 @@ export default function HomePage() {
     }
   }, []);
 
-  // Continuous background Auto-Sync loop (every 12 seconds)
+  // Background Auto-Sync loop (gentle 30-second cadence to preserve mobile battery and prevent UI freezing)
   useEffect(() => {
     fetchLiveCatalog(false);
     const interval = setInterval(() => {
       fetchLiveCatalog(false);
-    }, 12000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [fetchLiveCatalog]);
-
-  // Relative seconds counter for live auto-sync feedback
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSyncSecondsAgo((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Instant Auto-Sync on Tab Visibility / Focus
   // When user adds photos to Drive in another tab and returns, it syncs immediately!
@@ -175,11 +167,15 @@ export default function HomePage() {
           setAlbums((prevAlbums) =>
             prevAlbums.map((a) => {
               if (a.id === activeAlbum.id) {
+                const existingIds = new Set(a.photos.map((p) => p.id));
+                const newPhotos = data.photos.filter((p: any) => !existingIds.has(p.id));
+                if (newPhotos.length === 0) return a;
+                const merged = [...newPhotos, ...a.photos];
                 return {
                   ...a,
-                  photos: data.photos,
-                  photoCount: data.photoCount || data.photos.length,
-                  coverPhoto: data.photos[0] || a.coverPhoto,
+                  photos: merged,
+                  photoCount: merged.length,
+                  coverPhoto: merged[0] || a.coverPhoto,
                   subfolders: data.subfolders || a.subfolders,
                   hasLivePhotos: true,
                 };
@@ -310,7 +306,7 @@ export default function HomePage() {
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Auto-Sync Active (Every 12s)
+                Live Google Drive Sync
               </span>
               <span className="text-xs text-slate-500 font-medium">
                 {isSyncing ? (
@@ -318,10 +314,8 @@ export default function HomePage() {
                     <RefreshCw className="w-3 h-3 animate-spin" />
                     Checking Drive...
                   </span>
-                ) : syncSecondsAgo < 3 ? (
-                  "Synced Just now"
                 ) : (
-                  `Synced ${syncSecondsAgo}s ago`
+                  `Synced at ${lastSyncText}`
                 )}
               </span>
             </div>

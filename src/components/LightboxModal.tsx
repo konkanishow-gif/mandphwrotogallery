@@ -58,10 +58,10 @@ export default function LightboxModal({
   const previewSources = useMemo(() => {
     if (!currentPhoto) return [];
     return [
+      currentPhoto.previewUrl || `https://lh3.googleusercontent.com/d/${currentPhoto.id}=w1600`,
+      `https://lh3.googleusercontent.com/d/${currentPhoto.id}=w2400`,
       `https://drive.google.com/thumbnail?id=${currentPhoto.id}&sz=w1920`,
-      currentPhoto.previewUrl,
       `/api/drive/image?id=${currentPhoto.id}&sz=1920`,
-      currentPhoto.fullUrl,
     ];
   }, [currentPhoto]);
 
