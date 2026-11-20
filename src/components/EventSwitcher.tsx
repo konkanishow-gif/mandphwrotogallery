@@ -116,7 +116,7 @@ export default function EventSwitcher({
                 onSelectAlbum(album);
                 onSelectSubfolder?.("all");
               }}
-              className={`min-w-[170px] sm:min-w-0 snap-start shrink-0 sm:shrink p-3 sm:p-4 rounded-xl sm:rounded-2xl text-left transition-all duration-150 active:scale-95 touch-manipulation cursor-pointer flex flex-col justify-between gap-2 sm:gap-3 border ${
+              className={`min-w-[125px] sm:min-w-0 snap-start shrink-0 sm:shrink p-2 sm:p-3 rounded-lg sm:rounded-xl text-left transition-all duration-150 active:scale-95 touch-manipulation cursor-pointer flex flex-col justify-between gap-1.5 sm:gap-2.5 border ${
                 isActive
                   ? "bg-gradient-to-r from-[#870069] to-[#6A0050] text-white border-[#870069] shadow-md"
                   : "bg-slate-900/90 hover:bg-slate-800 text-white border-slate-800 hover:border-slate-700"
@@ -148,13 +148,13 @@ export default function EventSwitcher({
                   </span>
                 </div>
 
-                <span className="block font-bold text-xs sm:text-base leading-snug line-clamp-2">
+                <span className="block font-bold text-[11px] sm:text-base leading-snug line-clamp-1 sm:line-clamp-2">
                   {album.name}
                 </span>
               </div>
 
               <div
-                className={`text-[10px] sm:text-[11px] pt-1.5 sm:pt-2 border-t ${
+                className={`hidden sm:flex text-[10px] sm:text-[11px] pt-1.5 sm:pt-2 border-t ${
                   isActive ? "border-white/20 text-purple-200" : "border-slate-800 text-slate-400"
                 } flex items-center justify-between truncate`}
               >
@@ -167,41 +167,62 @@ export default function EventSwitcher({
 
       {/* If Active Album has Subfolders (like Guinness Marathon Day 01-13 or Symposium Sessions) */}
       {activeAlbum.hasSubfolders && activeAlbum.subfolders && activeAlbum.subfolders.length > 0 && (
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xs space-y-3">
+        <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-900 border border-slate-800 shadow-2xs space-y-2.5">
+          {/* Header with Title + Dropdown Selector for Instant Direct Access */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
               <FolderOpen className="w-4 h-4 text-[#FF693C]" />
-              Explore Sessions / Days inside {activeAlbum.shortTitle}:
+              Select Day / Session ({activeAlbum.subfolderCount} Days):
             </span>
-            <span className="text-[11px] text-slate-400">
-              {activeAlbum.subfolderCount} Subfolders in Google Drive
-            </span>
+
+            {/* Quick-Jump Dropdown Selector */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-slate-400 hidden xs:inline">Jump to:</span>
+              <select
+                value={activeSubfolder}
+                onChange={(e) => onSelectSubfolder?.(e.target.value)}
+                className="text-xs font-bold bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-amber-300 outline-none focus:border-[#FF693C] cursor-pointer shadow-xs"
+              >
+                <option value="all">All Days ({activeAlbum.photoCount} Photos)</option>
+                {activeAlbum.subfolders.map((sf) => (
+                  <option key={sf.id} value={sf.slug}>
+                    {sf.shortTitle || sf.name.split("|")[0].trim()} ({sf.photoCount} Photos)
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none touch-pan-x">
+          {/* Wrapped High-Access Quick Chips: Every day fits on screen in neat rows without scrolling */}
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
             <button
               onClick={() => onSelectSubfolder?.("all")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeSubfolder === "all"
-                  ? "bg-[#870069] text-white shadow-xs"
-                  : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  ? "bg-gradient-to-r from-[#870069] to-[#FF693C] text-white shadow-xs"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60"
               }`}
             >
-              All Sessions ({activeAlbum.photoCount} Photos)
+              All Days ({activeAlbum.photoCount})
             </button>
             {activeAlbum.subfolders.map((sf) => {
               const isSelected = activeSubfolder === sf.slug;
+              const label = sf.shortTitle || sf.name.split("|")[0].trim();
               return (
                 <button
                   key={sf.id}
                   onClick={() => onSelectSubfolder?.(sf.slug)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  title={`${sf.name} (${sf.photoCount} HD Photos)`}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
                     isSelected
-                      ? "bg-[#870069] text-white shadow-xs"
-                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      ? "bg-[#FF693C] text-black font-bold shadow-xs scale-105"
+                      : "bg-slate-800/90 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60"
                   }`}
                 >
-                  {sf.shortTitle} ({sf.photoCount} HD)
+                  <span>{label}</span>
+                  <span className={`text-[10px] ${isSelected ? "text-slate-900 font-bold" : "text-amber-300/80"}`}>
+                    ({sf.photoCount})
+                  </span>
                 </button>
               );
             })}

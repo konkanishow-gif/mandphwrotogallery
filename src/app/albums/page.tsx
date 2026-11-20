@@ -238,14 +238,14 @@ export default function AlbumsPage() {
 
         {/* Responsive Albums Display: 2 Columns on Phone, 3-4 on Desktop OR Compact List */}
         {layoutMode === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
             {filtered.map((album) => (
               <div
                 key={album.id}
-                className="group rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-md hover:shadow-xl hover:border-slate-700 transition-all duration-300 flex flex-col justify-between"
+                className="group rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xs hover:border-slate-700 transition-all flex flex-col justify-between"
               >
-                {/* Cover Image Container: Proportional aspect-[4/3] on mobile so photos are never too big */}
-                <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] bg-slate-950 overflow-hidden">
+                {/* Cover Image Container: Auto-Fit 3:2 matching photos */}
+                <div className="relative w-full aspect-[3/2] bg-slate-950 overflow-hidden flex items-center justify-center">
                   {album.coverPhoto ? (
                     <img
                       src={album.coverPhoto.thumbUrl || album.coverPhoto.previewUrl}
@@ -255,85 +255,63 @@ export default function AlbumsPage() {
                       loading="lazy"
                       decoding="async"
                       referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-full object-contain sm:object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 p-3 text-center">
-                      <Camera className="w-6 h-6 mb-1 opacity-50" />
-                      <span className="text-[10px] font-semibold">Live Folder</span>
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-slate-500 p-2 text-center">
+                      <Camera className="w-5 h-5 opacity-40" />
                     </div>
                   )}
 
-                  {/* Category Badge */}
-                  <div className="absolute top-1.5 left-1.5 sm:top-2.5 sm:left-2.5 z-10">
-                    <span className="px-2 py-0.5 rounded-full bg-[#870069] text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-wider shadow-sm truncate max-w-[90px] xs:max-w-[120px] block">
-                      {album.category}
+                  {/* Photo Count Badge */}
+                  <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 z-10">
+                    <span className="px-1.5 py-0.2 rounded-md bg-slate-950/90 text-amber-300 text-[8px] sm:text-[9px] font-bold border border-white/20">
+                      {album.photoCount} HD
                     </span>
                   </div>
 
-                  {/* Photo Count Badge */}
-                  <div className="absolute top-1.5 right-1.5 sm:top-2.5 sm:right-2.5 z-10">
-                    <span className="px-2 py-0.5 rounded-full bg-slate-950/85 backdrop-blur-md text-amber-300 text-[9px] sm:text-[10px] font-semibold border border-white/20">
-                      {album.photoCount} HD
+                  {/* Category Badge */}
+                  <div className="absolute bottom-1 left-1 sm:bottom-1.5 sm:left-1.5 z-10">
+                    <span className="px-1.5 py-0.2 rounded-md bg-[#870069]/90 text-white text-[8px] sm:text-[9px] font-bold uppercase tracking-wider truncate max-w-[90px] block">
+                      {album.category}
                     </span>
                   </div>
                 </div>
 
-                {/* Album Info */}
-                <div className="p-2.5 sm:p-4 flex-grow flex flex-col justify-between gap-2">
-                  <div className="space-y-1">
-                    <h3 className="text-xs sm:text-base font-bold text-white group-hover:text-amber-300 transition-colors leading-snug line-clamp-2">
-                      {album.name}
-                    </h3>
-                    <p className="hidden sm:block text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                      {album.description}
-                    </p>
+                {/* Album Info: Compact & Auto-Fit */}
+                <div className="p-2 sm:p-3 flex-grow flex flex-col justify-between gap-1.5">
+                  <h3 className="text-[11px] sm:text-sm font-bold text-white group-hover:text-amber-300 transition-colors line-clamp-1 leading-snug">
+                    {album.name}
+                  </h3>
+
+                  <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-slate-400">
+                    <span className="truncate max-w-[80px]">{album.date.split("-")[0]?.trim()}</span>
+                    <span className="text-amber-400/90 font-semibold">{album.photoCount} Photos</span>
                   </div>
 
-                  {/* Meta details */}
-                  <div className="pt-1.5 border-t border-slate-800 flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-[#FF693C]" />
-                      <span className="truncate max-w-[90px] sm:max-w-none">{album.date.split("-")[0]?.trim()}</span>
-                    </div>
-                    <div className="hidden xs:flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-[#FF693C]" />
-                      <span className="truncate max-w-[80px]">Mangalore</span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="pt-1 flex items-center gap-1.5">
-                    <Link
-                      href={`/album/${album.slug}`}
-                      className="flex-grow py-1.5 sm:py-2 px-2.5 rounded-lg sm:rounded-xl text-center text-[11px] sm:text-xs font-bold bg-[#870069] hover:bg-[#6A0050] text-white transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs"
-                    >
-                      <span>View</span>
-                      <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    </Link>
-
-                    <button
-                      onClick={() => shareAlbumOnWhatsApp(album)}
-                      className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white transition-colors cursor-pointer"
-                      title="Share album on WhatsApp"
-                    >
-                      <Share2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    </button>
-                  </div>
+                  {/* Compact Action */}
+                  <Link
+                    href={`/album/${album.slug}`}
+                    className="w-full py-1 sm:py-1.5 px-2 rounded-lg text-center text-[10px] sm:text-xs font-bold bg-[#870069] hover:bg-[#6A0050] text-white transition-colors flex items-center justify-center gap-1 shadow-2xs"
+                  >
+                    <span>View Album</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          /* List Mode: Sleek Horizontal Compact Cards on Phone */
-          <div className="flex flex-col gap-2.5">
+          /* List Mode: Ultra-Compact Horizontal Cards on Phone */
+          <div className="flex flex-col gap-1.5 sm:gap-2">
             {filtered.map((album) => (
-              <div
+              <Link
                 key={album.id}
-                className="group rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shadow-xs hover:border-slate-700 transition-all p-2 sm:p-3 flex items-center gap-3"
+                href={`/album/${album.slug}`}
+                className="group rounded-xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all p-1.5 sm:p-2.5 flex items-center gap-2 sm:gap-3 cursor-pointer"
               >
-                {/* Compact Thumbnail Photo */}
-                <div className="relative w-20 h-20 sm:w-28 sm:h-24 rounded-lg overflow-hidden shrink-0 bg-slate-950">
+                {/* Small Thumbnail: 52px x 52px on mobile */}
+                <div className="relative w-13 h-13 sm:w-18 sm:h-16 rounded-lg overflow-hidden shrink-0 bg-slate-950 flex items-center justify-center">
                   {album.coverPhoto ? (
                     <img
                       src={album.coverPhoto.thumbUrl || album.coverPhoto.previewUrl}
@@ -343,54 +321,35 @@ export default function AlbumsPage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-950 text-slate-500">
-                      <Camera className="w-6 h-6 opacity-40" />
-                    </div>
+                    <Camera className="w-4 h-4 opacity-40 text-slate-500" />
                   )}
-                  <span className="absolute bottom-1 right-1 px-1.5 py-0.2 rounded bg-black/80 text-[9px] font-bold text-amber-300">
-                    {album.photoCount} HD
-                  </span>
                 </div>
 
                 {/* Details */}
-                <div className="flex-grow min-w-0 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-full bg-[#870069] text-white text-[9px] font-bold uppercase tracking-wider">
+                <div className="flex-grow min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-1.5 py-0.2 rounded bg-[#870069] text-white text-[8px] sm:text-[9px] font-bold uppercase">
                       {album.category}
                     </span>
-                    <span className="text-[10px] text-slate-400">
-                      {album.date}
+                    <span className="text-[9px] sm:text-[10px] text-amber-300 font-semibold">
+                      {album.photoCount} HD
                     </span>
                   </div>
 
-                  <h3 className="text-xs sm:text-base font-bold text-white group-hover:text-amber-300 transition-colors truncate">
+                  <h3 className="text-xs sm:text-sm font-bold text-white group-hover:text-amber-300 transition-colors truncate mt-0.5">
                     {album.name}
                   </h3>
 
-                  <p className="hidden sm:block text-xs text-slate-400 line-clamp-1">
-                    {album.description}
-                  </p>
+                  <span className="text-[9px] sm:text-[10px] text-slate-400 block truncate">
+                    {album.date} • Kalaangann
+                  </span>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Link
-                    href={`/album/${album.slug}`}
-                    className="py-1.5 px-3 rounded-lg text-xs font-bold bg-[#870069] hover:bg-[#6A0050] text-white transition-colors flex items-center gap-1"
-                  >
-                    <span>View</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
-
-                  <button
-                    onClick={() => shareAlbumOnWhatsApp(album)}
-                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white transition-colors"
-                    title="Share album on WhatsApp"
-                  >
-                    <Share2 className="w-3.5 h-3.5" />
-                  </button>
+                {/* Arrow */}
+                <div className="p-1 sm:p-1.5 rounded-lg bg-slate-800 group-hover:bg-[#870069] text-slate-300 group-hover:text-white transition-colors shrink-0">
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
